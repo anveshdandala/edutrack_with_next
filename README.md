@@ -1,3 +1,4 @@
+steps to run:
 git clone https://github.com/anveshdandala/edutrack_with_next.git
 cd edutrack_with_next
 
