@@ -6,5 +6,4 @@ cd edutrack_with_next
 npm install
 npm run dev
 yaml
-Copy code
 ```
