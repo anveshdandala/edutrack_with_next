@@ -78,9 +78,7 @@ const studentData = {
 };
 // --- END MOCK DATA ---
 
-export default function StudentAnalysis({ params }) {
-  const { studentId } = params;
-
+export default function StudentAnalysis() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar showAuthButtons={false} />
@@ -97,7 +95,7 @@ export default function StudentAnalysis({ params }) {
           <div>
             <h1 className="text-3xl font-bold">Student Analysis</h1>
             <p className="text-muted-foreground">
-              Detailed analysis for {studentData.profile.name} (ID: {studentId})
+              Detailed analysis for {studentData.profile.name} (ID: 12345)
             </p>
           </div>
         </div>

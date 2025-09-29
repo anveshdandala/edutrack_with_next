@@ -129,7 +129,7 @@ export default function FacultyDashboard() {
                 {assignedStudents.map((student) => (
                   <Link
                     key={student.id}
-                    href={`/faculty/analysis/${student.id}`}
+                    href={"/faculty/analysis"}
                     className="block"
                   >
                     <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
