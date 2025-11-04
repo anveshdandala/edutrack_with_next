@@ -1,4 +1,22 @@
+import { useState, useEffect, use } from "react";
 export default function LoginForm() {
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const users = fetch("http://127.0.0.1:8000/auth/users", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => {
+        return res.json();
+      })
+      .then((data) => {
+        console.log("user emails:", data.email);
+      });
+  }, []);
+
   return (
     <div className="space-y-4">
       <div>
@@ -22,11 +40,27 @@ export default function LoginForm() {
         >
           Password
         </label>
+
         <input
           type="password"
           id="password"
           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
           placeholder="any password"
+        />
+      </div>
+      <div>
+        <label
+          htmlFor="confirm-password"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Confirm Password
+        </label>
+
+        <input
+          type="password"
+          id="confirm-password"
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          placeholder="confirm password"
         />
       </div>
       {/* The button is just for show, as navigation is handled by radio buttons */}

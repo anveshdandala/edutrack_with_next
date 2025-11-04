@@ -1,6 +1,6 @@
-import Navbar from "@/components/layout/Navbar"
-import CustomButton from "@/components/common/CustomButton"
-import Link from "next/link"
+import Navbar from "@/components/layout/Navbar";
+import CustomButton from "@/components/common/CustomButton";
+import Link from "next/link";
 
 export default function LandingPage() {
   return (
@@ -11,29 +11,36 @@ export default function LandingPage() {
         <section className="py-20 text-center space-y-8">
           <div className="max-w-4xl mx-auto space-y-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-balance leading-tight">
-              A Centralised Digital Platform for Comprehensive Student Activity Record in HEIs
+              A Centralised Digital Platform for Comprehensive Student Activity
+              Record in HEIs
             </h1>
 
             <div className="text-lg md:text-xl text-muted-foreground space-y-2 max-w-3xl mx-auto">
               <p>
-                This platform helps students build a verified portfolio while institutions get ready-to-use reports for
-                NAAC, AICTE, and NIRF accreditation.
+                This platform helps students build a verified portfolio while
+                institutions get ready-to-use reports for NAAC, AICTE, and NIRF
+                accreditation.
               </p>
               <p>
-                Streamline documentation, enhance transparency, and support institutional excellence through
-                comprehensive activity tracking.
+                Streamline documentation, enhance transparency, and support
+                institutional excellence through comprehensive activity
+                tracking.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link href="/auth">
+              <Link href="/auth/login">
                 <CustomButton size="lg" className="text-lg px-8">
-                  Get Started
+                  user Login
                 </CustomButton>
               </Link>
-              <Link href="#demo">
-                <CustomButton variant="outline" size="lg" className="text-lg px-8 bg-transparent">
-                  Watch Demo
+              <Link href="/auth/signup">
+                <CustomButton
+                  variant="outline"
+                  size="lg"
+                  className="text-lg px-8 bg-transparent"
+                >
+                  Register your college
                 </CustomButton>
               </Link>
             </div>
@@ -45,13 +52,20 @@ export default function LandingPage() {
             <div className="aspect-video bg-muted rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                  <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-8 h-8 text-primary"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-semibold">Platform Demo Video</h3>
-                  <p className="text-muted-foreground">Video will be embedded here to showcase the platform features</p>
+                  <p className="text-muted-foreground">
+                    Video will be embedded here to showcase the platform
+                    features
+                  </p>
                 </div>
               </div>
             </div>
@@ -63,7 +77,8 @@ export default function LandingPage() {
             <div className="space-y-4">
               <h2 className="text-3xl md:text-4xl font-bold">Key Features</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Comprehensive tools for students and institutions to track, verify, and report academic activities
+                Comprehensive tools for students and institutions to track,
+                verify, and report academic activities
               </p>
             </div>
 
@@ -86,7 +101,8 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-semibold">Verified Portfolio</h3>
                 <p className="text-muted-foreground">
-                  Students can build and maintain a comprehensive, verified record of all academic activities
+                  Students can build and maintain a comprehensive, verified
+                  record of all academic activities
                 </p>
               </div>
 
@@ -108,7 +124,8 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-semibold">Automated Reports</h3>
                 <p className="text-muted-foreground">
-                  Generate ready-to-use reports for NAAC, AICTE, and NIRF accreditation processes
+                  Generate ready-to-use reports for NAAC, AICTE, and NIRF
+                  accreditation processes
                 </p>
               </div>
 
@@ -128,9 +145,12 @@ export default function LandingPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold">Institutional Dashboard</h3>
+                <h3 className="text-xl font-semibold">
+                  Institutional Dashboard
+                </h3>
                 <p className="text-muted-foreground">
-                  Comprehensive analytics and insights for faculty and administrative staff
+                  Comprehensive analytics and insights for faculty and
+                  administrative staff
                 </p>
               </div>
             </div>
@@ -144,5 +164,5 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

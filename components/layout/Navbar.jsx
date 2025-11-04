@@ -50,7 +50,7 @@ export default function Navbar({ showAuthButtons = true }) {
                   </Button>
                 </Link>
                 <Link href="/auth">
-                  <Button size="sm">Get Started</Button>
+                  <Button size="sm">sign up</Button>
                 </Link>
               </div>
             )}

@@ -1,24 +1,7 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect, use } from "react";
 import CustomButton from "@/components/common/CustomButton";
-// A simple SVG icon for the logo/header
-const LogoIcon = () => (
-  <svg
-    className="w-10 h-10 text-indigo-600"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M12 6.253v11.494m-9-5.747h18"
-    />
-  </svg>
-);
-
+import { da } from "date-fns/locale";
 // We've moved the LoginForm component into this file to resolve the import error.
 function LoginForm({ onLogin }) {
   // We prevent the form's default behavior and call the passed function instead
@@ -26,6 +9,59 @@ function LoginForm({ onLogin }) {
     event.preventDefault();
     onLogin();
   };
+  const [jwt, setJwt] = useState(null);
+
+  const username = "admin";
+  const password = "test";
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/auth/jwt/create/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Login failed: ${errText}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log("JWT Data:", data);
+        setJwt(data);
+      })
+      .catch((err) => console.error(err));
+  }, [username, password]);
+
+  useEffect(() => {
+    if (!jwt?.access) return; // wait until JWT is ready
+
+    fetch("http://127.0.0.1:8000/auth/users/", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${jwt.access}`,
+      },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`User fetch failed: ${text}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log("User Data:", data);
+      })
+      .catch((err) => console.error(err));
+  }, [jwt]);
+
+  // Step 3: Optional - decode JWT safely
+  const decodedJWT =
+    jwt && jwt.access ? JSON.parse(atob(jwt.access.split(".")[1])) : null;
+
+  console.log("Decoded JWT:", decodedJWT);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -70,6 +106,27 @@ function LoginForm({ onLogin }) {
           <input
             id="password"
             name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            placeholder="••••••••"
+            className="w-full px-3 py-2 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+      </div>
+      <div>
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor="re-password"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Confirm Password
+          </label>
+        </div>
+        <div className="mt-1">
+          <input
+            id="re-password"
+            name="re-password"
             type="password"
             autoComplete="current-password"
             required
