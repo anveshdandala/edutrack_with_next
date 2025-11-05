@@ -7,6 +7,7 @@ export default function ApiTesting() {
   const [jwt, setJwt] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [users, setUsers] = useState([{}]);
 
   const formatErrors = (errObj) => {
     if (typeof errObj === "object" && errObj !== null) {
@@ -42,7 +43,7 @@ export default function ApiTesting() {
 
   async function createUser({ email, username, password, re_password }) {
     const res = await fetch(`${API}/auth/users/`, {
-      method: "POST",
+      method: "GET",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, username, password, re_password }),
     });
@@ -99,6 +100,24 @@ export default function ApiTesting() {
     const password = e.currentTarget.form.user_password.value;
     setMsg("Logging in…");
     await getJwt({ username, password });
+  }
+
+  async function getusers() {
+    const response = await fetch(`${API}/auth/users`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${jwt}`,
+      },
+    });
+    const data = await response.json(); // await it properly because itt is a promisee
+
+    if (response.ok) {
+      setUsers(data);
+      console.log("available users:", data);
+    } else {
+      console.error("Error fetching users:", data);
+    }
   }
 
   return (
@@ -165,6 +184,21 @@ export default function ApiTesting() {
       <div className="mt-4">
         <p className="text-sm">{msg}</p>
         <p className="break-all mt-2">{jwt ? `JWT: ${jwt}` : "No JWT yet"}</p>
+      </div>
+
+      <div className="available-users flex flex-col border rounded p-3 w-1/2">
+        <button className="border rounded p-2" onClick={getusers}>
+          show avalable users
+        </button>
+        <div className="details flex flex-wrap">
+          <div className="indi-block border rounded p-2">
+            {users.map((user) => (
+              <li key={user.id}>
+                {user.username} ({user.email})
+              </li>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
