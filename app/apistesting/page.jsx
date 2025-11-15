@@ -43,7 +43,7 @@ export default function ApiTesting() {
 
   async function createUser({ email, username, password, re_password }) {
     const res = await fetch(`${API}/auth/users/`, {
-      method: "GET",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, username, password, re_password }),
     });

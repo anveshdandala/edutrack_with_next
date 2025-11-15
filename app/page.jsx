@@ -1,8 +1,11 @@
+"use client";
 import Navbar from "@/components/layout/Navbar";
 import CustomButton from "@/components/common/CustomButton";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -46,6 +49,12 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+        <div>
+          <button onClick={() => router.push("/apistesting")}>
+            apitesting page
+          </button>
+          <Link href="/apistesting">apis testing</Link>
+        </div>
 
         <section id="demo" className="py-16">
           <div className="max-w-4xl mx-auto">
