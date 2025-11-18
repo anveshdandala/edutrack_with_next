@@ -1,10 +1,6 @@
 "use client";
 import React, { createContext, useEffect, useState } from "react";
-import {
-  restoreSession,
-  getStoredUser,
-  logout as libLogout,
-} from "../lib/auth";
+import { restoreSession, logout as libLogout } from "../lib/auth";
 
 export const AuthContext = createContext({
   user: null,
@@ -14,31 +10,37 @@ export const AuthContext = createContext({
 });
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(getStoredUser());
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    // attempt to restore session (refresh access, fetch profile)
-    restoreSession()
-      .then((result) => {
-        if (!mounted) return;
-        if (result?.user) setUser(result.user);
-      })
-      .catch(() => {
-        // ignore errors, user stays null
-      })
-      .finally(() => {
+
+    async function initAuth() {
+      try {
+        const { user: restoredUser } = await restoreSession();
+        if (mounted && restoredUser) {
+          setUser(restoredUser);
+        }
+      } catch (error) {
+        console.error("Auth initialization failed", error);
+      } finally {
         if (mounted) setLoading(false);
-      });
+      }
+    }
+
+    initAuth();
+
     return () => {
       mounted = false;
     };
   }, []);
 
   const doLogout = async () => {
-    await libLogout({ callServer: true });
+    await libLogout();
     setUser(null);
+    // Optional: Redirect to login page here
+    // window.location.href = '/auth/login';
   };
 
   return (
