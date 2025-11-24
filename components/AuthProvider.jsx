@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useEffect, useState } from "react";
 import { restoreSession, logout as libLogout } from "../lib/auth";
+import { LinearProgress } from "@mui/material";
 
 export const AuthContext = createContext({
   user: null,
@@ -12,20 +13,31 @@ export const AuthContext = createContext({
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  console.log("[AuthProvider] start");
 
   useEffect(() => {
     let mounted = true;
 
     async function initAuth() {
+      console.log("[AuthProvider] initAuth start");
       try {
         const { user: restoredUser } = await restoreSession();
+        console.log("[AuthProvider] restoreSession returned:", restoredUser);
         if (mounted && restoredUser) {
+          console.log(
+            "[AuthProvider] setting user from restoreSession:",
+            restoredUser
+          );
           setUser(restoredUser);
         }
       } catch (error) {
-        console.error("Auth initialization failed", error);
+        console.error("[AuthProvider] Auth initialization failed", error);
       } finally {
         if (mounted) setLoading(false);
+        console.log(
+          "[AuthProvider] initAuth done, loading:",
+          mounted ? false : "unmounted"
+        );
       }
     }
 
@@ -38,14 +50,16 @@ export function AuthProvider({ children }) {
 
   const doLogout = async () => {
     await libLogout();
-    setUser(null);
-    // Optional: Redirect to login page here
-    // window.location.href = '/auth/login';
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, logout: doLogout }}>
-      {children}
-    </AuthContext.Provider>
+    <>
+      {loading && <LinearProgress />}
+      <AuthContext.Provider
+        value={{ user, setUser, loading, logout: doLogout }}
+      >
+        {children}
+      </AuthContext.Provider>
+    </>
   );
 }

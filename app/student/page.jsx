@@ -4,7 +4,8 @@ import { AcademicDetailsCard } from "@/components/academic-details-card";
 import { ActivityScoreCard } from "@/components/activity-score-card";
 import { CarouselSection } from "@/components/carousel-section";
 import { motion } from "framer-motion"; // Import motion
-
+import useAuth from "@/components/useAuth";
+import { useEffect } from "react";
 // Animation variants for the container and items
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -17,6 +18,11 @@ const containerVariants = {
 };
 
 export default function StudentDashboard() {
+  const { user, loading } = useAuth();
+  useEffect(() => {
+    console.log("[StudentPage] user, loading:", user, loading);
+  }, [user, loading]);
+
   return (
     <div className="min-h-screen mx-[max(7vw,12px)] bg-background">
       <DashboardHeader />

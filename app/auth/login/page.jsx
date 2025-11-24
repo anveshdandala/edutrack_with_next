@@ -18,10 +18,12 @@ import CustomButton from "@/components/common/CustomButton";
 import { set } from "date-fns";
 
 export default function LoginPage() {
-  const { setUser } = useAuth();
+  const { user, loading, setUser } = useAuth();
+
   const [activeRole, setActiveRole] = useState("student");
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [role, setRole] = useState("student");
 
   const [errors, setErrors] = useState({});
 
@@ -32,15 +34,16 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors("");
-
+    setErrors({});
+    setRole(activeRole);
     setIsSubmitting(true);
     try {
       const user = await login(formData.username, formData.password);
       setUser(user);
-      router.push("/student");
+      console.log(user);
+      router.push(`/${activeRole}`);
     } catch (err) {
-      setErrors(err?.message ?? "Login failed");
+      setErrors({ general: err?.message ?? "Login failed" });
     } finally {
       setIsSubmitting(false);
     }
@@ -79,9 +82,10 @@ export default function LoginPage() {
                     onValueChange={setActiveRole}
                     className="w-full mb-6"
                   >
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="student">Student</TabsTrigger>
                       <TabsTrigger value="faculty">Faculty</TabsTrigger>
+                      <TabsTrigger value="institution">Institution</TabsTrigger>
                     </TabsList>
                   </Tabs>
 
@@ -91,7 +95,9 @@ export default function LoginPage() {
                       placeholder={
                         activeRole === "student"
                           ? "Enter your student username"
-                          : "Enter your faculty username"
+                          : activeRole === "faculty"
+                          ? "Enter your faculty username"
+                          : "enter institution username"
                       }
                       value={formData.username}
                       onChange={(e) =>

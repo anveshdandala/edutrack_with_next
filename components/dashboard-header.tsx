@@ -1,5 +1,5 @@
 "use client"
-
+import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,9 +10,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
+import GeminiImage from "../public/Gemini_Generated_Image_gf2jcmgf2jcmgf2j~2.jpg"
 import { GraduationCap, Settings, User, LogOut } from "lucide-react"
+import useAuth from "./useAuth"
+import { useRouter } from "next/navigation"
 
 export function DashboardHeader() {
+  const router = useRouter();
   return (
     <header className="sticky top-0 pl-[60px] pr-[60px] z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
@@ -26,35 +30,25 @@ export function DashboardHeader() {
           <ThemeToggle />
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="/diverse-student-profiles.png" alt="Student" />
-                  <AvatarFallback>JS</AvatarFallback>
-                </Avatar>
-              </Button>
+            <DropdownMenuTrigger>
+              <Image
+              src={GeminiImage}
+              alt="user image "
+              width={40}
+                height={40}
+                className="rounded-full"
+              >
+              </Image>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <div className="flex items-center justify-start gap-2 p-2">
-                <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">John Smith</p>
-                  <p className="w-[200px] truncate text-sm text-muted-foreground">john.smith@university.edu</p>
-                </div>
-              </div>
+            <DropdownMenuContent>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Edit Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
+              <DropdownMenuItem
+              onClick={()=>{router.push("/student/profile")}}
+              >
+                Profile
+                </DropdownMenuItem>
+              <DropdownMenuItem>Certificates</DropdownMenuItem>
+              <DropdownMenuItem>Subscription</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

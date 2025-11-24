@@ -6,8 +6,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import useAuth from "@/components/useAuth";
+import CreateDepartment from "@/components/institution/CreateDepartment";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import InputField from "@/components/common/InputField";
+import CustomButton from "@/components/common/CustomButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -48,9 +52,18 @@ import {
   Activity,
   Calendar,
   Filter,
+  Upload,
 } from "lucide-react";
-
+import { fetchWithAuth } from "@/lib/auth.js";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import HodCreation from "@/components/institution/hodCreation";
 const Institution = () => {
+  const K_ACCESS = "accesstoken";
+  const K_REFRESH = "refreshtoken";
+  const { instAdmin } = useAuth();
+  const [hodexists, setHodexists] = useState(false);
+
   // Sample data for charts
   const radarData = [
     { subject: "Academics", A: 85, B: 78, fullMark: 100 },
@@ -145,6 +158,136 @@ const Institution = () => {
       trend: "+8%",
     },
   ];
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(null);
+  const [hodData, setHodData] = useState({
+    first_name: "",
+    last_name: "",
+    role: "",
+    department: "",
+    username: "",
+    email: "",
+    password: "",
+  });
+
+  const { user } = useAuth();
+
+  const handleFileChanges = (e) => {
+    const f = e.target.files?.[0] ?? null;
+    setSelectedFile(f);
+    setError(null);
+    console.log("selected file:", f?.name);
+  };
+
+  const handleHodInputChange = (field, value) =>
+    setHodData((prev) => ({ ...prev, [field]: value }));
+
+  const postHod = async (e) => {
+    e.preventDefault();
+    console.log("hod details:", hodData); // Now logs the actual object
+
+    setLoading(true);
+    setError(null);
+    try {
+      const access = localStorage.getItem(K_ACCESS);
+      console.log("[institutio] access:", access);
+      const res = await fetch("http://127.0.0.1:8000/create-hod", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(access ? { Authorization: `Bearer ${access}` } : {}),
+        },
+        body: JSON.stringify(hodData),
+      });
+
+      const text = await res.text();
+      let json;
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(`Non-JSON response: ${text.slice(0, 200)}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(json?.detail ?? JSON.stringify(json));
+      }
+
+      console.log("HOD created successfully:", json);
+      setHodexists(true);
+      setHodData({
+        first_name: "",
+        last_name: "",
+        role: "",
+        department: "",
+        username: "",
+        email: "",
+        password: "",
+      }); // Reset form
+    } catch (err) {
+      console.error("postHod error:", err);
+      setError(err?.message ?? String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadStudents = async () => {
+    if (!selectedFile) {
+      setError("No file selected");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const form = new FormData();
+      form.append("file", selectedFile);
+      form.append("role", "STUDENT");
+      form.append("body", "MY_COLLEGE_CODE");
+      console.log(
+        "selectedFile:",
+        selectedFile?.name,
+        selectedFile?.type,
+        selectedFile?.size
+      );
+
+      const access = localStorage.getItem(K_ACCESS);
+
+      const res = await fetch("http://127.0.0.1:8000/create-bulk-profiles", {
+        method: "POST",
+        headers: access
+          ? {
+              Authorization: `Bearer ${access}`,
+            }
+          : undefined,
+
+        body: form,
+      });
+
+      const text = await res.text();
+      let json;
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(`Non-JSON response: ${text.slice(0, 200)}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(json?.detail ?? JSON.stringify(json));
+      }
+
+      setData(json);
+      console.log("upload success:", json);
+    } catch (err) {
+      console.error("uploadStudents error", err);
+      setError(err?.message ?? String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-portfolio-muted to-portfolio-secondary">
@@ -187,6 +330,22 @@ const Institution = () => {
             </div>
           </div>
         </div>
+      </div>
+      <div className="container mx-auto px-6 py-8">
+        <CreateDepartment />
+      </div>
+
+      <div className="create-hod mb-6 bg-white/80 backdrop-blur-sm border-b border-portfolio-accent/20">
+        {hodexists ? (
+          <div>HOD already exists</div>
+        ) : (
+          <div className="container mx-auto px-6 py-8">
+            <h2 className="text-2xl font-bold text-portfolio-text mb-6">
+              Add HOD
+            </h2>
+            <HodCreation />
+          </div>
+        )}
       </div>
 
       <div className="container mx-auto px-6 py-8">
@@ -315,27 +474,29 @@ const Institution = () => {
                 <FileText className="w-4 h-4 mr-2" />
                 Generate NAAC Report
               </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-portfolio-accent text-portfolio-accent hover:bg-portfolio-accent/10"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export Data (.csv)
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-portfolio-primary text-portfolio-primary hover:bg-portfolio-primary/10"
-              >
-                <Award className="w-4 h-4 mr-2" />
-                Student Leaderboard
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-portfolio-text-light text-portfolio-text-light hover:bg-portfolio-text-light/10"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Manage Verifications
-              </Button>
+
+              <div>
+                <Input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFileChanges}
+                  className="mb-3"
+                />
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={uploadStudents}
+                    variant="outline"
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {loading ? "Uploading..." : "Add students data"}
+                  </Button>
+                </div>
+
+                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+              </div>
             </CardContent>
           </Card>
         </div>
