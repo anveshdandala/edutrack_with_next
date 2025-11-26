@@ -14,97 +14,89 @@ import {
   Users,
   Activity,
   Eye,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const certificateTypes = [
+  { id: "seminars", title: "Seminars", icon: Users },
+  { id: "conferences", title: "Conferences", icon: Award },
+  { id: "moocs", title: "MOOCs", icon: GraduationCap },
+  { id: "internships", title: "Internships", icon: Briefcase },
+  { id: "extracurricular", title: "Extra-curriculars", icon: FileText },
+];
+
+const verifiedCertificates = [
   {
-    id: "seminars",
-    title: "Seminars",
-    icon: Users,
-    description: "Upload certificates from seminars and workshops",
-    uploads: [
-      {
-        name: "AI Workshop Certificate.pdf",
-        status: "approved",
-        date: "2024-02-15",
-      },
-      { name: "Blockchain Seminar.pdf", status: "pending", date: "2024-03-01" },
-    ],
+    id: 1,
+    type: "seminars",
+    name: "AI Workshop Certificate",
+    link: "https://example.com/cert1",
+    date: "2024-02-15",
+    issuer: "Tech Academy",
   },
   {
-    id: "conferences",
-    title: "Conferences",
-    icon: Award,
-    description: "Upload certificates from academic conferences",
-    uploads: [
-      {
-        name: "IEEE Conference 2024.pdf",
-        status: "approved",
-        date: "2024-01-20",
-      },
-    ],
+    id: 2,
+    type: "conferences",
+    name: "IEEE Conference 2024",
+    link: "https://example.com/cert2",
+    date: "2024-01-20",
+    issuer: "IEEE",
   },
   {
-    id: "moocs",
-    title: "MOOCs",
-    icon: GraduationCap,
-    description: "Upload certificates from online courses",
-    uploads: [
-      {
-        name: "Coursera ML Course.pdf",
-        status: "approved",
-        date: "2024-02-28",
-      },
-      { name: "edX Data Science.pdf", status: "pending", date: "2024-03-05" },
-    ],
+    id: 3,
+    type: "moocs",
+    name: "Coursera ML Course",
+    link: "https://example.com/cert3",
+    date: "2024-02-28",
+    issuer: "Coursera",
   },
   {
-    id: "internships",
-    title: "Internships",
-    icon: Briefcase,
-    description: "Upload internship completion certificates",
-    uploads: [
-      {
-        name: "Summer Internship 2024.pdf",
-        status: "approved",
-        date: "2024-02-10",
-      },
-    ],
+    id: 4,
+    type: "internships",
+    name: "Summer Internship 2024",
+    link: "https://example.com/cert4",
+    date: "2024-02-10",
+    issuer: "Tech Corp",
   },
   {
-    id: "extracurricular",
-    title: "Extra-curriculars",
-    icon: FileText,
-    description: "Upload certificates from extra-curricular activities",
-    uploads: [
-      { name: "Debate Competition.pdf", status: "pending", date: "2024-03-08" },
-    ],
+    id: 5,
+    type: "seminars",
+    name: "Blockchain Seminar",
+    link: "https://example.com/cert5",
+    date: "2024-03-01",
+    issuer: "Web3 Academy",
   },
 ];
 
 export default function CertificatesPage() {
   const router = useRouter();
-  const [uploadingType, setUploadingType] = useState(null);
+  const scrollRef = useRef(null);
+  const [selectedType, setSelectedType] = useState("seminars");
+  const [verificationLink, setVerificationLink] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleUpload = (typeId) => {
-    setUploadingType(typeId);
-    // Simulate upload process
+  const handleAddCertificate = async () => {
+    if (!verificationLink.trim()) return;
+
+    setIsSubmitting(true);
+    // Simulate verification process
     setTimeout(() => {
-      setUploadingType(null);
-      // Here you would typically handle the actual file upload
-    }, 2000);
+      setIsSubmitting(false);
+      setVerificationLink("");
+      // Here you would typically handle the actual certificate submission
+    }, 1500);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100";
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = 400;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
     }
   };
 
@@ -115,7 +107,7 @@ export default function CertificatesPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" onClick={() => router.push("/student")}>
-            <ArrowLeft className="h-6  mr-2" />
+            <ArrowLeft className="h-4 w-4 mr-2" />
           </Button>
           <div className="flex-1">
             <div className="flex items-center justify-between">
@@ -143,62 +135,135 @@ export default function CertificatesPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {certificateTypes.map((type) => {
-            const IconComponent = type.icon;
-            return (
-              <Card key={type.id} className="h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <IconComponent className="h-5 w-5 text-primary" />
-                    {type.title}
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {type.description}
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button
-                    className="w-full"
-                    onClick={() => handleUpload(type.id)}
-                    disabled={uploadingType === type.id}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Add New Certificate</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Certificate Type Dropdown */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">
+                    Certificate Type
+                  </label>
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="px-3 py-2 border border-input rounded-md bg-background text-sm"
                   >
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploadingType === type.id
-                      ? "Uploading..."
-                      : "Upload Certificate"}
-                  </Button>
+                    {certificateTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  {type.uploads.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Recent Uploads</h4>
-                      {type.uploads.map((upload, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-2 bg-muted rounded-md"
+                {/* Verification Link Input */}
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <label className="text-sm font-medium">
+                    Verification Link
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="Enter certificate verification link"
+                    value={verificationLink}
+                    onChange={(e) => setVerificationLink(e.target.value)}
+                    className="px-3 py-2 border border-input rounded-md bg-background text-sm"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handleAddCertificate}
+                disabled={isSubmitting || !verificationLink.trim()}
+                className="w-full md:w-auto"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {isSubmitting ? "Verifying..." : "Add Certificate"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold">Verified Certificates</h2>
+
+          <div className="relative group">
+            {/* Left Scroll Button */}
+            <button
+              onClick={() => scroll("left")}
+              className="absolute -left-12 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronLeft className="h-6 w-6 text-primary" />
+            </button>
+
+            {/* Scrollable Container */}
+            <div
+              ref={scrollRef}
+              className="flex gap-4 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory"
+              style={{ scrollBehavior: "smooth" }}
+            >
+              {verifiedCertificates.length > 0 ? (
+                verifiedCertificates.map((cert) => (
+                  <Card
+                    key={cert.id}
+                    className="flex-shrink-0 w-80 snap-center"
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-base line-clamp-2">
+                        {cert.name}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {cert.issuer}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Badge
+                        variant="outline"
+                        className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                      >
+                        ✓ Verified
+                      </Badge>
+                      <div className="text-xs space-y-2">
+                        <p>
+                          <span className="font-medium">Type:</span>{" "}
+                          {
+                            certificateTypes.find((t) => t.id === cert.type)
+                              ?.title
+                          }
+                        </p>
+                        <p>
+                          <span className="font-medium">Date:</span> {cert.date}
+                        </p>
+                        <a
+                          href={cert.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline break-all"
                         >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {upload.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {upload.date}
-                            </p>
-                          </div>
-                          <Badge
-                            variant="secondary"
-                            className={getStatusColor(upload.status)}
-                          >
-                            {upload.status}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                          View Certificate →
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="flex items-center justify-center w-full h-40 text-muted-foreground">
+                  <p>No verified certificates yet. Add one to get started!</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right Scroll Button */}
+            <button
+              onClick={() => scroll("right")}
+              className="absolute -right-12 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronRight className="h-6 w-6 text-primary" />
+            </button>
+          </div>
         </div>
       </main>
     </div>

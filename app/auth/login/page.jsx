@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { login } from "@/lib/auth.js";
+import { login as apiLogin, fetchWithAuth } from "@/lib/auth.js";
 import useAuth from "@/components/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -35,13 +35,35 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    setRole(activeRole);
     setIsSubmitting(true);
+
     try {
-      const user = await login(formData.username, formData.password);
-      setUser(user);
-      console.log(user);
-      router.push(`/${activeRole}`);
+      await apiLogin(formData.username, formData.password);
+      const me = await fetchWithAuth("http://127.0.0.1:8000/auth/users/me/", {
+        method: "GET",
+      });
+      setUser(me);
+
+      const roleMap = {
+        student: "STUDENT",
+        faculty: "FACULTY" || "HOD",
+        institution: "ADMIN",
+      };
+
+      const expected = roleMap[activeRole];
+      const actual = (me.role || me.user_type || me.type || "").toUpperCase();
+
+      if (expected && actual === expected) {
+        if (activeRole === "student") router.push("/student");
+        else if (activeRole === "faculty") router.push("/faculty");
+        else if (activeRole === "institution") router.push("/institution");
+      } else {
+        // mismatch
+        setErrors({
+          general:
+            "Logged in but role does not match selected tab. Please choose the correct role tab or contact admin.",
+        });
+      }
     } catch (err) {
       setErrors({ general: err?.message ?? "Login failed" });
     } finally {
@@ -77,6 +99,11 @@ export default function LoginPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {errors.general && (
+                    <div className="mb-4 text-sm text-red-800 bg-red-50 border border-red-200 p-3 rounded">
+                      {errors.general}
+                    </div>
+                  )}
                   <Tabs
                     value={activeRole}
                     onValueChange={setActiveRole}
@@ -127,6 +154,12 @@ export default function LoginPage() {
                     >
                       {isSubmitting ? "Signing in..." : "Sign In"}
                     </CustomButton>
+
+                    {errors.general && (
+                      <p className="text-center text-sm text-red-600 mt-2">
+                        {errors.general}
+                      </p>
+                    )}
 
                     <div className="text-center space-y-2">
                       <Link

@@ -49,12 +49,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-        <div>
-          <button onClick={() => router.push("/apistesting")}>
-            apitesting page
-          </button>
-          <Link href="/apistesting">apis testing</Link>
-        </div>
 
         <section id="demo" className="py-16">
           <div className="max-w-4xl mx-auto">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { AcademicDetailsCard } from "@/components/academic-details-card";
 import { Button } from "@/components/ui/button";
@@ -10,16 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, Edit2, X, Save } from "lucide-react";
 import useAuth from "@/components/useAuth";
-import { useEffect } from "react";
 
 export default function StudentProfile() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const { user, loading } = useAuth();
-
-  // Personal details state
-  const [personalDetails, setPersonalDetails] = useState({
+  // canonical initial shape used for both personalDetails and editedDetails
+  const initialDetails = {
     firstName: "",
     lastName: "",
     email: "",
@@ -33,48 +27,75 @@ export default function StudentProfile() {
     state: "Telangana",
     country: "India",
     pincode: "500001",
-  });
+  };
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const [personalDetails, setPersonalDetails] = useState(initialDetails);
+  const [editedDetails, setEditedDetails] = useState(initialDetails);
+
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (!user) return;
-    setPersonalDetails((prev) => ({
-      firstName: prev.firstName || user.username || "",
-      lastName: prev.lastName || "",
-      email: prev.email || user.email || "",
-    }));
+    const mapped = {
+      ...initialDetails,
+      firstName: user.first_name ?? user.firstName ?? user.username ?? "",
+      lastName: user.last_name ?? user.lastName ?? "",
+      email: user.email ?? "",
+      phone: user.phone ?? initialDetails.phone,
+      rollNumber: user.rollNumber ?? initialDetails.rollNumber,
+      department: user.department ?? initialDetails.department,
+      year: user.year ?? initialDetails.year,
+      dateOfBirth:
+        user.date_of_birth ?? user.dateOfBirth ?? initialDetails.dateOfBirth,
+      address: user.address ?? initialDetails.address,
+      city: user.city ?? initialDetails.city,
+      state: user.state ?? initialDetails.state,
+      country: user.country ?? initialDetails.country,
+      pincode: user.pincode ?? initialDetails.pincode,
+    };
+    setPersonalDetails(mapped);
+    setEditedDetails(mapped);
   }, [user]);
 
-  useEffect(() => {
-    console.log("[Student profile page] user, loading:", user, loading);
-  }, [user, loading]);
-  if (loading) return <div>Loading auth…</div>;
-  if (!user) return <div>Please login</div>;
-
-  const [editedDetails, setEditedDetails] = useState(personalDetails);
+  // when user presses Edit, ensure editedDetails seeded from the latest personalDetails
+  const onEdit = () => {
+    setEditedDetails(personalDetails);
+    setIsEditing(true);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditedDetails({
-      ...editedDetails,
-      [name]: value,
-    });
+    setEditedDetails((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setPersonalDetails(editedDetails);
-    setIsEditing(false);
-    setIsSaving(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      // TODO: call update API here
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setPersonalDetails((prev) => ({ ...prev, ...editedDetails }));
+      setIsEditing(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
     setEditedDetails(personalDetails);
     setIsEditing(false);
   };
+
+  useEffect(() => {
+    console.log("[Student profile page] user, loading:", user, loading);
+  }, [user, loading]);
+  if (loading) return <div>Loading auth…</div>;
+  if (!user) return <div>Please login</div>;
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,7 +133,7 @@ export default function StudentProfile() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsEditing(true)}
+                      onClick={onEdit}
                       className="gap-2"
                     >
                       <Edit2 className="h-4 w-4" />

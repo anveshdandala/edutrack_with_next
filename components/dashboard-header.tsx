@@ -8,51 +8,85 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
-import GeminiImage from "../public/Gemini_Generated_Image_gf2jcmgf2jcmgf2j~2.jpg"
-import { GraduationCap, Settings, User, LogOut } from "lucide-react"
+import { GraduationCap, Settings, User, LogOut, Bell, Award } from "lucide-react"
 import useAuth from "./useAuth"
 import { useRouter } from "next/navigation"
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  user?: {
+    name?: string | null;
+    email?: string | null;
+  } | null;
+}
+
+export function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter();
+  const UserPlaceholder = "/placeholder-user.jpg";
+  const userInitials = user?.name
+    ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    : "ST";
+
   return (
-    <header className="sticky top-0 pl-[60px] pr-[60px] z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <GraduationCap className="h-6 w-6 text-primary" />
-          <span className="text-xl font-semibold"
-          >EduTrack</span>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl">
+        {/* Logo */}
+        <div 
+          className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-80"
+          onClick={() => router.push("/student/dashboard")}
+        >
+          <div className="bg-primary/10 p-2 rounded-lg">
+            <GraduationCap className="h-6 w-6 text-primary" />
+          </div>
+          <span className="text-xl font-bold tracking-tight">EduTrack</span>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Actions */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Bell className="h-5 w-5" />
+          </Button>
+          
           <ThemeToggle />
 
           <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Image
-              src={GeminiImage}
-              alt="user image "
-              width={40}
-                height={40}
-                className="rounded-full"
-              >
-              </Image>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-primary/10 hover:ring-primary/30 transition-all p-0 overflow-hidden">
+                <Avatar className="h-9 w-9">
+                    <AvatarImage src={UserPlaceholder} alt="User" />
+                    <AvatarFallback>{userInitials}</AvatarFallback>
+                </Avatar>
+              </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user?.name || "Student"}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email || "student@example.com"}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-              onClick={()=>{router.push("/student/profile")}}
-              >
-                Profile
-                </DropdownMenuItem>
-              <DropdownMenuItem>Certificates</DropdownMenuItem>
-              <DropdownMenuItem>Subscription</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/student/profile")}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/student/certificates")}>
+                <Award className="mr-2 h-4 w-4" />
+                <span>Certificates</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
     </header>
-  )
+  );
 }
