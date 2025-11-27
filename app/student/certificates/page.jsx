@@ -18,7 +18,9 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { AuthProvider } from "@/components/AuthProvider";
+import useAuth from "@/components/useAuth";
 
 const certificateTypes = [
   { id: "seminars", title: "Seminars", icon: Users },
@@ -73,6 +75,7 @@ const verifiedCertificates = [
 
 export default function CertificatesPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
   const scrollRef = useRef(null);
   const [selectedType, setSelectedType] = useState("seminars");
   const [verificationLink, setVerificationLink] = useState("");
@@ -100,6 +103,19 @@ export default function CertificatesPage() {
     }
   };
 
+  useEffect(() => {
+    if (!loading && !user) router.push("/auth/login");
+  }, [loading, user, router]);
+
+  // show a simple loading placeholder while auth is being restored
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-sm text-muted-foreground">Loading user…</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader />
@@ -124,11 +140,28 @@ export default function CertificatesPage() {
                   <span className="text-lg font-bold text-primary">85</span>
                 </div>
                 <Button
-                  onClick={() => router.push("/portfolio")}
+                  onClick={() =>
+                    router.push("student/portfolio/perssonal-portfolio")
+                  }
+                  className="flex items-center gap-2"
+                >
+                  get personal report
+                </Button>
+                <Button
+                  onClick={() =>
+                    router.push("/student/portfolio/professional-portfolio")
+                  }
                   className="flex items-center gap-2"
                 >
                   <Eye className="h-4 w-4" />
-                  View Portfolio
+                  generate portfolio
+                </Button>
+                <Button
+                  onClick={() => router.push("/student/resume")}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  generate resume
                 </Button>
               </div>
             </div>

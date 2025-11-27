@@ -6,8 +6,7 @@ import TiltedCard from "@/components/react-bits/TiltedCard";
 import LightRays from "@/components/react-bits/LightRays";
 import Navgation from "@/components/react-bits/NavgationPort";
 import SkillIcon from "@/components/react-bits/SkillIcon";
-import GeminiImage from "../../../public/Gemini_Generated_Image_gf2jcmgf2jcmgf2j~2.jpg";
-import Image from "next/image";
+import GeminiImage from "../../../../public/Gemini_Generated_Image_gf2jcmgf2jcmgf2j~2.jpg";
 import { useState } from "react";
 import Dock from "@/components/react-bits/Dock";
 
