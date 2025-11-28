@@ -34,14 +34,6 @@ export default function ResumeBuilder() {
     fontFamily: "sans",
   });
 
-  const handleDataUpdate = (path, value) => {
-    setResumeData((prev) => updateNestedState(prev, path, value));
-  };
-
-  const handleSettingsUpdate = (key, value) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
-
   const templates = [
     { id: "modern", label: "Modern", component: ModernTemplate },
     { id: "classic", label: "Classic", component: ClassicTemplate },
@@ -53,44 +45,41 @@ export default function ResumeBuilder() {
     { id: "minimal", label: "Minimal", component: MinimalTemplate },
   ];
 
-  const handleDownload = async () => {
-    const printContent = document.getElementById("resume-preview");
+  // pick the component for the currently selected template
+  const CurrentTemplate =
+    templates.find((t) => t.id === selectedTemplate)?.component ??
+    ModernTemplate;
 
+  // handle PDF download (html2canvas + jsPDF), fallback to window.print()
+  const handleDownload = async (id) => {
+    const printContent = document.getElementById(id);
     if (!printContent) return;
-
-    // html2canvas configuration to avoid OKLCH errors and improve quality
-    const canvas = await html2canvas(printContent, {
-      scale: 2, // Higher resolution for PDF
-      backgroundColor: "#ffffff", // Force white background
-      useCORS: true, // Handle external images if any
-      logging: false,
-    });
-
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-
-    const imgWidth = 210;
-    const pageHeight = pdf.internal.pageSize.height;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    try {
+      const canvas = await html2canvas(printContent, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = 210;
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("resume.pdf");
+    } catch (err) {
+      console.error("PDF generation failed, falling back to print()", err);
+      window.print();
     }
-
-    pdf.save("resume.pdf");
   };
 
-  const CurrentTemplate =
-    templates.find((t) => t.id === selectedTemplate)?.component ||
-    ModernTemplate;
+  const handleDataUpdate = (path, value) => {
+    setResumeData((prev) => updateNestedState(prev, path, value));
+  };
+
+  const handleSettingsUpdate = (key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -119,23 +108,40 @@ export default function ResumeBuilder() {
           </div>
         </div>
 
-        {/* Primary Color */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-medium text-foreground mb-3">
             Primary Color
           </label>
-          <div className="flex gap-2 items-center">
-            <input
-              type="color"
-              value={settings.primaryColor}
-              onChange={(e) =>
-                handleSettingsUpdate("primaryColor", e.target.value)
-              }
-              className="w-12 h-10 rounded cursor-pointer border border-border"
-            />
-            <span className="text-xs text-muted-foreground">
-              {settings.primaryColor}
-            </span>
+          <div className="grid grid-cols-5 gap-3">
+            {[
+              "#000000",
+              "#334155",
+              "#4767acff",
+              "#059669",
+              "#d15d5dff",
+              "#905ee6ff",
+              "#ad6083ff",
+              "#835137ff",
+              "#0891b2",
+              "#726dd3ff",
+            ].map((color) => (
+              <button
+                key={color}
+                onClick={() => handleSettingsUpdate("primaryColor", color)}
+                className={`w-8 h-8 rounded-full border border-border flex items-center justify-center transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary ${
+                  settings.primaryColor === color
+                    ? "ring-2 ring-offset-2 ring-black dark:ring-white scale-110"
+                    : ""
+                }`}
+                style={{ backgroundColor: color }}
+                aria-label={`Select color ${color}`}
+                title={color}
+              />
+            ))}
+          </div>
+          {/* Optional: Display current hex code softly below */}
+          <div className="mt-2 text-xs text-muted-foreground text-center">
+            Selected: <span className="font-mono">{settings.primaryColor}</span>
           </div>
         </div>
 
@@ -196,7 +202,11 @@ export default function ResumeBuilder() {
             <option value="2">Two Columns</option>
           </select>
         </div>
-        <Button variant="contained" onClick={handleDownload} fullWidth>
+        <Button
+          variant="contained"
+          onClick={() => handleDownload("resume-preview")}
+          fullWidth
+        >
           Download PDF
         </Button>
       </div>
@@ -210,17 +220,14 @@ export default function ResumeBuilder() {
         {/* Resume Preview */}
         <div className="flex-1 flex justify-center p-8 bg-gray-100 overflow-auto">
           <div
-            id="resume-preview"
-            // REMOVED 'bg-card' to prevent OKLCH error
             className="w-[210mm] min-h-[297mm] shadow-2xl overflow-hidden print:shadow-none"
             data-resume-content
             style={{
-              backgroundColor: "white", // Explicit hex white prevents crash
+              backgroundColor: "white",
               color: "black",
               "--primary-color": settings.primaryColor,
               "--font-size": `${settings.fontSize}px`,
               fontSize: `${settings.fontSize}px`,
-              // Apply font family setting
               fontFamily:
                 settings.fontFamily === "mono"
                   ? "monospace"
@@ -229,12 +236,13 @@ export default function ResumeBuilder() {
                   : "sans-serif",
             }}
           >
-            {/* Settings passed to template */}
-            <CurrentTemplate
-              data={resumeData}
-              onUpdate={handleDataUpdate}
-              settings={settings}
-            />
+            <div id="resume-preview">
+              <CurrentTemplate
+                data={resumeData}
+                onUpdate={handleDataUpdate}
+                settings={settings}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -13,9 +13,10 @@ export const AuthContext = createContext({
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  console.log("[AuthProvider] start");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true); // ensure client-only render for UI that differs on SSR (e.g. MUI)
     let mounted = true;
 
     async function initAuth() {
@@ -54,7 +55,7 @@ export function AuthProvider({ children }) {
 
   return (
     <>
-      {loading && <LinearProgress />}
+      {mounted && loading && <LinearProgress />}
       <AuthContext.Provider
         value={{ user, setUser, loading, logout: doLogout }}
       >
