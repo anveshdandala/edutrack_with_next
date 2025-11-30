@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
-import { fetchWithAuth } from "@/lib/auth";
-
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,14 +33,11 @@ export default function CreateHodPage() {
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetchWithAuth("http://127.0.0.1:8000/create-hod", {
+      const res = await fetch("/api/create-hod", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      setSuccess("HOD created successfully");
-      // reset minimal fields or keep as needed
-      setForm((p) => ({ ...p, password: "", username: "" }));
     } catch (err) {
       setError(err?.message ?? String(err));
     } finally {

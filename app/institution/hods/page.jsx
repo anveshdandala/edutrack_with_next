@@ -1,35 +1,18 @@
-"use client";
-import { useEffect, useState } from "react";
-import { fetchWithAuth } from "@/lib/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-// import { cookies } from "next/headers";
-import { da } from "date-fns/locale";
+import { fetchServer } from "@/lib/server-api";
+import { error } from "console";
 
-export default function HodsListPage() {
-  const [hods, setHods] = useState(null);
-  const [loading, setLoading] = useState(true);
-  // request this endpoint
-  useEffect(() => {
-    async function getHods() {
-      let mounted = true;
-      const response = await fetchWithAuth("http://127.0.0.1:8000/list-hods", {
-        method: "GET",
-      })
-        .then((data) => {
-          console.log("hods under instute are:", data);
-          if (!mounted) return;
-          setHods(data);
-        })
-        .catch((e) => console.error(e))
-        .finally(() => mounted && setLoading(false));
-      return () => (mounted = false);
-    }
-    getHods();
-  }, []);
-
-  if (loading) return <div>Loading…</div>;
+export default async function HodsListPage() {
+  let hods = [];
+  try {
+    const data = await fetchServer("/list-hods");
+    hods = data;
+  } catch (e) {
+    console.error("failed to get HODS");
+  }
+  console.log(hods);
 
   return (
     <div className="container mx-auto px-6 py-8">

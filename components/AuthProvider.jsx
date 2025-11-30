@@ -1,66 +1,43 @@
 "use client";
-import React, { createContext, useEffect, useState } from "react";
-import { restoreSession, logout as libLogout } from "../lib/auth";
-import { LinearProgress } from "@mui/material";
+import { createContext, useContext, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export const AuthContext = createContext({
+const AuthContext = createContext({
   user: null,
-  setUser: () => {},
-  loading: true,
+  login: async () => {},
   logout: async () => {},
 });
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
+export function AuthProvider({ children, initialUser }) {
+  // Initialize state with the data passed from the Server Layout
+  const [user, setUser] = useState(initialUser);
+  const router = useRouter();
 
-  useEffect(() => {
-    setMounted(true); // ensure client-only render for UI that differs on SSR (e.g. MUI)
-    let mounted = true;
+  const login = async (username, password) => {
+    // Call our Next.js API Route
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
 
-    async function initAuth() {
-      console.log("[AuthProvider] initAuth start");
-      try {
-        const { user: restoredUser } = await restoreSession();
-        console.log("[AuthProvider] restoreSession returned:", restoredUser);
-        if (mounted && restoredUser) {
-          console.log(
-            "[AuthProvider] setting user from restoreSession:",
-            restoredUser
-          );
-          setUser(restoredUser);
-        }
-      } catch (error) {
-        console.error("[AuthProvider] Auth initialization failed", error);
-      } finally {
-        if (mounted) setLoading(false);
-        console.log(
-          "[AuthProvider] initAuth done, loading:",
-          mounted ? false : "unmounted"
-        );
-      }
-    }
+    if (!res.ok) throw new Error("Login Failed");
 
-    initAuth();
+    // Refresh the page so the Server Components (Layout/Page) re-run and see the new cookie
+    router.refresh();
+  };
 
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const doLogout = async () => {
-    await libLogout();
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    router.push("/login");
+    router.refresh();
   };
 
   return (
-    <>
-      {mounted && loading && <LinearProgress />}
-      <AuthContext.Provider
-        value={{ user, setUser, loading, logout: doLogout }}
-      >
-        {children}
-      </AuthContext.Provider>
-    </>
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => useContext(AuthContext);

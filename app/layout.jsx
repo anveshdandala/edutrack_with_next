@@ -1,28 +1,23 @@
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import { Analytics } from "@vercel/analytics/next";
-import ClientLayout from "./client-layout";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { Suspense } from "react";
+import { AuthProvider } from "@/components/AuthProvider"; // See Step 4
+import { fetchServer } from "@/lib/server-api";
 
-import { AuthProvider } from "@/components/AuthProvider";
+const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "Student Dashboard",
-  description: "Academic management dashboard for students",
-  generator: "v0.app",
-};
+export default async function RootLayout({ children }) {
+  // 1. Fetch User Server-Side
+  let user = null;
+  try {
+    user = await fetchServer("/auth/users/me/");
+  } catch (e) {
+    // User is likely not logged in
+  }
 
-export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <AuthProvider>
-          <Suspense fallback={<div>Loading...</div>}>
-            <ClientLayout>{children}</ClientLayout>
-          </Suspense>
-          <Analytics />
-        </AuthProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <AuthProvider initialUser={user}>{children}</AuthProvider>
       </body>
     </html>
   );

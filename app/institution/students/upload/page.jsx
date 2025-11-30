@@ -1,3 +1,4 @@
+// app/institution/students/upload/page.jsx
 "use client";
 
 import React, { useState } from "react";
@@ -18,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import useAuth from "@/components/useAuth";
+import useAuth from "@/components/useAuth"; // Keep this to get user ID/College Code
 
 export default function StudentUploadPage() {
   const { user } = useAuth();
@@ -26,14 +27,12 @@ export default function StudentUploadPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-
-  // New state to store the generated file URL
   const [downloadUrl, setDownloadUrl] = useState(null);
 
   const handleFileChange = (e) => {
     setError(null);
     setSuccess(false);
-    setDownloadUrl(null); // Reset download link on new file selection
+    setDownloadUrl(null);
     setSelectedFile(e.target.files?.[0] ?? null);
   };
 
@@ -49,31 +48,27 @@ export default function StudentUploadPage() {
     setDownloadUrl(null);
 
     try {
-      const access = localStorage.getItem("accesstoken");
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("role", "STUDENT");
+      // Use optional chaining carefully
       formData.append("body", user?.collegeCode || user?.id || "");
 
-      const response = await fetch(
-        "http://127.0.0.1:8000/create-bulk-profiles",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${access}`,
-          },
-          body: formData,
-        }
-      );
+      // ✅ CHANGE: Call Next.js API Proxy
+      const response = await fetch("/api/students/upload", {
+        method: "POST",
+        // ✅ CHANGE: Do NOT set Authorization header here (Cookies handles it)
+        // ✅ CHANGE: Do NOT set Content-Type header manually for FormData
+        body: formData,
+      });
 
-      // 1. Check if the response is JSON (Error) or CSV (Success)
       const contentType = response.headers.get("content-type");
 
       if (!response.ok) {
-        // If error, it's likely JSON error details
         const errorData = await response.json();
         console.error("Server Validation Error:", errorData);
 
+        // Handle Django Error Object parsing
         const errorMessage = Object.entries(errorData)
           .map(
             ([key, msgs]) =>
@@ -84,24 +79,18 @@ export default function StudentUploadPage() {
         throw new Error(errorMessage || "Upload failed");
       }
 
-      // 2. If successful, the server returns a CSV file (Blob)
+      // Handle CSV Download
       if (contentType && contentType.includes("text/csv")) {
         const blob = await response.blob();
-
-        // Create a temporary URL for the blob
         const url = window.URL.createObjectURL(blob);
         setDownloadUrl(url);
         setSuccess(true);
-        setSelectedFile(null); // Optional: clear file input
+        setSelectedFile(null);
       } else {
         setSuccess(true);
       }
     } catch (err) {
-      if (err?.status === 401) {
-        setError("Unauthorized — please login again.");
-      } else {
-        setError(err?.message ?? String(err));
-      }
+      setError(err?.message ?? "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -219,7 +208,7 @@ export default function StudentUploadPage() {
             </div>
           )}
 
-          {/* Upload Button (Only show if not success) */}
+          {/* Upload Button */}
           {!success && (
             <Button
               onClick={handleUpload}

@@ -12,6 +12,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@google/genai": "^1.30.0",
     "@hookform/resolvers": "^3.10.0",
     "@mui/material": "^7.3.5",
     "@radix-ui/react-accordion": "1.2.2",
@@ -48,6 +49,7 @@
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
+    "dotenv": "^17.2.3",
     "embla-carousel-react": "8.5.1",
     "framer-motion": "^12.23.16",
     "geist": "latest",

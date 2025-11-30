@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { GraduationCap, Settings, User, LogOut, Bell, Award } from "lucide-react"
-import useAuth from "./useAuth"
+import useAuth from "../useAuth"
 import { useRouter } from "next/navigation"
 
 interface DashboardHeaderProps {

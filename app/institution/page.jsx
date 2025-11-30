@@ -1,36 +1,23 @@
-"use client";
-import { KPICards } from "@/components/institution/KPICards";
-import { CompetencyChart } from "@/components/institution/CompetencyChart";
-import { QuickActions } from "@/components/institution/QuickActions";
-import { AchievementTrends } from "@/components/institution/AchievementTrends";
-import { AchievementBreakdown } from "@/components/institution/AchievementBreakdown";
-import { RecentAchievements } from "@/components/institution/RecentAchievements";
-// lazy chart component (client only)
+import { fetchServer } from "@/lib/server-api"; // Your server fetcher
+import { redirect } from "next/navigation";
+import InstitutionDashboardUI from "./dashboard-ui"; // Move your existing UI here
 
-export default function InstitutionPage() {
-  return (
-    <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">Institution Dashboard</h1>
-        <p className="text-muted">Admin actions and insights</p>
-      </header>
+export default async function InstitutionPage() {
+  // 1. Check Auth on the Server
+  let user = null;
+  try {
+    user = await fetchServer("/auth/users/me/");
+  } catch (e) {
+    // If fetch fails (401), redirect to login
+    redirect("/login");
+  }
 
-      <KPICards />
+  // 2. Check Role (Security)
+  // Adjust "ADMIN" to whatever your backend actually calls the Institution role
+  if (!user || (user.role !== "ADMIN" && user.role !== "INSTITUTION")) {
+    redirect("/login?error=unauthorized");
+  }
 
-      {/* Main Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        <CompetencyChart />
-        <QuickActions />
-      </div>
-
-      {/* Secondary Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <AchievementTrends />
-        <AchievementBreakdown />
-      </div>
-
-      {/* Recent Achievements */}
-      <RecentAchievements />
-    </div>
-  );
+  // 3. Pass data to the UI if needed, or just render it
+  return <InstitutionDashboardUI user={user} />;
 }

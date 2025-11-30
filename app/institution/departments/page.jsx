@@ -49,42 +49,39 @@ export default function RecentAchievements() {
     setError(null);
     setSuccess(null);
 
-    if (!name.trim()) {
-      setError("Department name is required.");
-      return;
-    }
+    // ... validation logic ...
 
     setLoading(true);
     try {
-      const response = await fetchWithAuth(
-        "http://127.0.0.1:8000/create-department",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: name.trim(),
-            description: description,
-          }),
-        }
-      );
-      // fetchWithAuth returns parsed JSON or throws — check content if needed
-      console.log("create-department response:", response);
-      if (!response) {
+      // No headers needed, Cookie is automatic
+      const response = await fetch("/api/departments/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
         console.log("failed to post department");
-        setError("Failed to create department");
+        setError(data.error || "Failed to create department");
       } else {
         setSuccess("Department created successfully");
         setName("");
         setDescription("");
-      }
 
-      // If backend returns 201 with body, handle it; otherwise handle accordingly
+        // Optional: Refresh the page list if you have one
+        // router.refresh();
+      }
     } catch (err) {
       setError(err.message || "Failed to create department");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <>
       <div className="p-8">
