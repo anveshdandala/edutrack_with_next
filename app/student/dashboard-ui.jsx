@@ -36,23 +36,12 @@ export default function StudentDashboardUI({ user }) {
         <motion.div variants={itemVariants}>
           <CarouselSection />
         </motion.div>
-      </motion.main>
-      <div className="lg:col-span-1">
-        <div className="sticky top-8">
-          <ChatInterface studentProfile={MOCK_STUDENT_PROFILE} />
-
-          {/* Additional "Tips" box below chat */}
-          <div className="mt-6 bg-white border border-slate-200 rounded-2xl p-6 text-slate-600 shadow-sm">
-            <h3 className="font-bold text-slate-800 text-sm mb-2">
-              Did you know?
-            </h3>
-            <p className="text-xs leading-relaxed">
-              Your conversation history is saved automatically. You can close
-              this tab and return later to continue planning your roadmap.
-            </p>
+        <div className="lg:col-span-1">
+          <div className="sticky top-8">
+            <ChatInterface studentProfile={MOCK_STUDENT_PROFILE} />
           </div>
         </div>
-      </div>
+      </motion.main>
     </div>
   );
 }

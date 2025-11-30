@@ -8,6 +8,7 @@ export default async function StudentPage() {
   try {
     const data = await fetchServer("/auth/users/me/");
     user = data;
+    console.log("[student] user:", user);
   } catch (e) {
     redirect("/auth/login");
   }

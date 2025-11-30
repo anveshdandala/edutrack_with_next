@@ -9,10 +9,6 @@ import {
 // For this demo, we use process.env.API_KEY as strictly requested.
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_API_KEY });
 
-const Role = {
-  USER: "user",
-  MODEL: "model",
-};
 /**
  * Transforms our internal ChatMessage format to the SDK's Content format.
  */

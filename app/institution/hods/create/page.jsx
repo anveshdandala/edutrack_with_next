@@ -15,7 +15,6 @@ export default function CreateHodPage() {
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
-    role: "HOD",
     department: "",
     username: "",
     email: "",
@@ -122,7 +121,7 @@ export default function CreateHodPage() {
                 <SelectItem value="cse">Computer Science</SelectItem>
                 <SelectItem value="ece">Electronics</SelectItem>
                 <SelectItem value="mech">Mechanical</SelectItem>
-                <SelectItem value="civil">Civil</SelectItem>
+                <SelectItem value="civil">FD</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -150,7 +149,6 @@ export default function CreateHodPage() {
                 setForm({
                   first_name: "",
                   last_name: "",
-                  role: "HOD",
                   department: "",
                   username: "",
                   email: "",

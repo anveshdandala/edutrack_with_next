@@ -1,67 +1,106 @@
 "use client";
-
 import { useState, useEffect } from "react";
-import { DashboardHeader } from "@/components/dashboard-header";
-import { AcademicDetailsCard } from "@/components/academic-details-card";
+import { DashboardHeader } from "@/components/student/dashboard-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, Edit2, X, Save } from "lucide-react";
-import useAuth from "@/components/useAuth";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  CheckCircle2,
+  Edit2,
+  X,
+  Save,
+  MapPin,
+  Calendar,
+  Mail,
+  Phone,
+  GraduationCap,
+  Building,
+  User,
+  Camera,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function StudentProfile() {
-  // canonical initial shape used for both personalDetails and editedDetails
+  // --- STATE MANAGEMENT ---
   const initialDetails = {
     firstName: "",
     lastName: "",
     email: "",
-    phone: "+91 98765 43210",
-    rollNumber: "21CS001",
-    department: "Computer Science",
-    year: "3rd Year",
-    dateOfBirth: "2003-05-15",
-    address: "123 Student Street, Hyderabad",
-    city: "Hyderabad",
-    state: "Telangana",
-    country: "India",
-    pincode: "500001",
+    phone: "",
+    rollNumber: "",
+    department: "",
+    year: "",
+    dateOfBirth: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    pincode: "",
   };
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [personalDetails, setPersonalDetails] = useState(initialDetails);
   const [editedDetails, setEditedDetails] = useState(initialDetails);
 
-  const { user, loading } = useAuth();
+  useEffect(() => {
+    async function fetchUserData() {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/auth/me");
 
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+        } else {
+          console.error("Failed to fetch user:", res.status);
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUserData();
+  }, []);
+  // --- DATA SYNC ---
   useEffect(() => {
     if (!user) return;
     const mapped = {
-      ...initialDetails,
       firstName: user.first_name ?? user.firstName ?? user.username ?? "",
       lastName: user.last_name ?? user.lastName ?? "",
       email: user.email ?? "",
-      phone: user.phone ?? initialDetails.phone,
-      rollNumber: user.rollNumber ?? initialDetails.rollNumber,
-      department: user.department ?? initialDetails.department,
-      year: user.year ?? initialDetails.year,
-      dateOfBirth:
-        user.date_of_birth ?? user.dateOfBirth ?? initialDetails.dateOfBirth,
-      address: user.address ?? initialDetails.address,
-      city: user.city ?? initialDetails.city,
-      state: user.state ?? initialDetails.state,
-      country: user.country ?? initialDetails.country,
-      pincode: user.pincode ?? initialDetails.pincode,
+      phone: user.phone ?? "+91 98765 43210",
+      rollNumber: user.rollNumber ?? "21CS001",
+      department: user.department ?? "Computer Science",
+      year: user.year ?? "3rd Year",
+      dateOfBirth: user.date_of_birth ?? user.dateOfBirth ?? "2003-05-15",
+      address: user.address ?? "123 Student Street",
+      city: user.city ?? "Hyderabad",
+      state: user.state ?? "Telangana",
+      country: user.country ?? "India",
+      pincode: user.pincode ?? "500001",
     };
     setPersonalDetails(mapped);
     setEditedDetails(mapped);
   }, [user]);
 
-  // when user presses Edit, ensure editedDetails seeded from the latest personalDetails
+  // --- HANDLERS ---
   const onEdit = () => {
     setEditedDetails(personalDetails);
     setIsEditing(true);
@@ -75,8 +114,8 @@ export default function StudentProfile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: call update API here
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 800));
       setPersonalDetails((prev) => ({ ...prev, ...editedDetails }));
       setIsEditing(false);
       setShowSuccess(true);
@@ -91,380 +130,492 @@ export default function StudentProfile() {
     setIsEditing(false);
   };
 
-  useEffect(() => {
-    console.log("[Student profile page] user, loading:", user, loading);
-  }, [user, loading]);
-  if (loading) return <div>Loading auth…</div>;
-  if (!user) return <div>Please login</div>;
+  // --- LOADING STATE ---
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="text-muted-foreground text-sm">Loading Profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user)
+    return <div className="p-8 text-center">Please login to view profile.</div>;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-10">
       <DashboardHeader />
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Profile</h1>
-          <p className="text-muted-foreground">
-            View and manage your personal information
-          </p>
-        </div>
+      <main className="container mx-auto px-4 max-w-6xl mt-6">
+        {/* Success Toast / Alert */}
+        <AnimatePresence>
+          {showSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="fixed top-24 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2"
+            >
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="font-medium">Profile updated successfully!</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {showSuccess && (
-          <Alert className="mb-6 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
-            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-            <AlertDescription className="text-green-800 dark:text-green-300">
-              Profile updated successfully!
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Personal Details (2/3) */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-2xl pt-6">
-                    Personal Information
-                  </CardTitle>
-                  {!isEditing ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onEdit}
-                      className="gap-2"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                      Edit
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="gap-2"
-                      >
-                        <Save className="h-4 w-4" />
-                        {isSaving ? "Saving..." : "Save"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancel}
-                        className="gap-2 bg-transparent"
-                      >
-                        <X className="h-4 w-4" />
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* --- LEFT COLUMN (Main Profile) --- */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Header Card with Banner */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="overflow-hidden border-border/50 shadow-sm">
+                <div className="h-32 bg-gradient-to-r from-blue-600 to-purple-600 relative">
+                  {/* Edit Cover Button (Visual only) */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20"
+                  >
+                    <Camera className="h-4 w-4 mr-2" /> Change Cover
+                  </Button>
                 </div>
-              </CardHeader>
-
-              <CardContent className="space-y-8">
-                {/* Basic Information */}
-                <div>
-                  <h3 className="font-semibold mb-4">Basic Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        name="firstName"
-                        value={editedDetails.firstName}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={!isEditing ? "bg-muted" : ""}
-                      />
+                <CardContent className="relative pt-0 pb-6 px-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-12 mb-4">
+                    <Avatar className="h-24 w-24 border-4 border-background shadow-md">
+                      <AvatarImage src="/placeholder-user.jpg" />
+                      <AvatarFallback className="text-2xl bg-slate-200 text-slate-600">
+                        {personalDetails.firstName[0]}
+                        {personalDetails.lastName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 space-y-1 mt-2 sm:mt-0">
+                      <h1 className="text-2xl font-bold">
+                        {personalDetails.firstName} {personalDetails.lastName}
+                      </h1>
+                      <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Building className="h-3 w-3" />{" "}
+                          {personalDetails.department}
+                        </span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="flex items-center gap-1">
+                          <GraduationCap className="h-3 w-3" />{" "}
+                          {personalDetails.year} Student
+                        </span>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        name="lastName"
-                        value={editedDetails.lastName}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={!isEditing ? "bg-muted" : ""}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={editedDetails.email}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={!isEditing ? "bg-muted" : ""}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        value={editedDetails.phone}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={!isEditing ? "bg-muted" : ""}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                      <Input
-                        id="dateOfBirth"
-                        name="dateOfBirth"
-                        type="date"
-                        value={editedDetails.dateOfBirth}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={!isEditing ? "bg-muted" : ""}
-                      />
+                    <div className="mt-4 sm:mt-0 w-full sm:w-auto">
+                      {!isEditing ? (
+                        <Button
+                          onClick={onEdit}
+                          className="w-full sm:w-auto gap-2"
+                          variant="outline"
+                        >
+                          <Edit2 className="h-4 w-4" /> Edit Profile
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <Button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="flex-1 sm:flex-none gap-2"
+                          >
+                            {isSaving ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            ) : (
+                              <Save className="h-4 w-4" />
+                            )}
+                            Save
+                          </Button>
+                          <Button
+                            onClick={handleCancel}
+                            variant="ghost"
+                            className="flex-1 sm:flex-none"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-                {/* Academic Information */}
-                <div className="border-t pt-6">
-                  <h3 className="font-semibold mb-4">Academic Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="rollNumber">Roll Number</Label>
-                      <Input
-                        id="rollNumber"
-                        name="rollNumber"
-                        value={editedDetails.rollNumber}
-                        onChange={handleInputChange}
-                        disabled={true}
-                        className="bg-muted"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="department">Department</Label>
-                      <Input
-                        id="department"
-                        name="department"
-                        value={editedDetails.department}
-                        onChange={handleInputChange}
-                        disabled={true}
-                        className="bg-muted"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="year">Year</Label>
-                      <Input
-                        id="year"
-                        name="year"
-                        value={editedDetails.year}
-                        onChange={handleInputChange}
-                        disabled={true}
-                        className="bg-muted"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Address Information */}
-                <div className="border-t pt-6">
-                  <h3 className="font-semibold mb-4">Address</h3>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Address</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        value={editedDetails.address}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={!isEditing ? "bg-muted" : ""}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Details Form */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Profile Details</CardTitle>
+                  <CardDescription>
+                    Manage your personal and academic information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  {/* Basic Info Group */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                      <User className="h-4 w-4" /> Basic Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
+                        <Label>First Name</Label>
                         <Input
-                          id="city"
-                          name="city"
-                          value={editedDetails.city}
+                          name="firstName"
+                          value={editedDetails.firstName}
                           onChange={handleInputChange}
                           disabled={!isEditing}
-                          className={!isEditing ? "bg-muted" : ""}
+                          className={
+                            !isEditing
+                              ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium"
+                              : ""
+                          }
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="state">State</Label>
+                        <Label>Last Name</Label>
                         <Input
-                          id="state"
-                          name="state"
-                          value={editedDetails.state}
+                          name="lastName"
+                          value={editedDetails.lastName}
                           onChange={handleInputChange}
                           disabled={!isEditing}
-                          className={!isEditing ? "bg-muted" : ""}
+                          className={
+                            !isEditing
+                              ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium"
+                              : ""
+                          }
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
-                        <Input
-                          id="country"
-                          name="country"
-                          value={editedDetails.country}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                          className={!isEditing ? "bg-muted" : ""}
-                        />
+                        <Label>Email</Label>
+                        <div className="relative">
+                          <Input
+                            name="email"
+                            value={editedDetails.email}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className={
+                              !isEditing
+                                ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium pl-6"
+                                : "pl-9"
+                            }
+                          />
+                          <Mail
+                            className={`absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ${
+                              !isEditing ? "left-0" : "left-3"
+                            }`}
+                          />
+                        </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="pincode">Pincode</Label>
-                        <Input
-                          id="pincode"
-                          name="pincode"
-                          value={editedDetails.pincode}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                          className={!isEditing ? "bg-muted" : ""}
-                        />
+                        <Label>Phone</Label>
+                        <div className="relative">
+                          <Input
+                            name="phone"
+                            value={editedDetails.phone}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className={
+                              !isEditing
+                                ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium pl-6"
+                                : "pl-9"
+                            }
+                          />
+                          <Phone
+                            className={`absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ${
+                              !isEditing ? "left-0" : "left-3"
+                            }`}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Date of Birth</Label>
+                        <div className="relative">
+                          <Input
+                            type={isEditing ? "date" : "text"}
+                            name="dateOfBirth"
+                            value={editedDetails.dateOfBirth}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className={
+                              !isEditing
+                                ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium pl-6"
+                                : "pl-9"
+                            }
+                          />
+                          <Calendar
+                            className={`absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ${
+                              !isEditing ? "left-0" : "left-3"
+                            }`}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+
+                  <Separator />
+
+                  {/* Academic Info Group */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" /> Academic Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/30 p-4 rounded-lg border border-border/50">
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">
+                          Roll Number
+                        </Label>
+                        <div className="font-mono font-medium">
+                          {personalDetails.rollNumber}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">
+                          Department
+                        </Label>
+                        <div className="font-medium">
+                          {personalDetails.department}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">
+                          Current Year
+                        </Label>
+                        <div className="font-medium">
+                          {personalDetails.year}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Address Info Group */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                      <MapPin className="h-4 w-4" /> Location
+                    </h3>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-2">
+                        <Label>Address Line</Label>
+                        <Input
+                          name="address"
+                          value={editedDetails.address}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          className={
+                            !isEditing
+                              ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium"
+                              : ""
+                          }
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label>City</Label>
+                          <Input
+                            name="city"
+                            value={editedDetails.city}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className={
+                              !isEditing
+                                ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium"
+                                : ""
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>State</Label>
+                          <Input
+                            name="state"
+                            value={editedDetails.state}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className={
+                              !isEditing
+                                ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium"
+                                : ""
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Country</Label>
+                          <Input
+                            name="country"
+                            value={editedDetails.country}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className={
+                              !isEditing
+                                ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium"
+                                : ""
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Pincode</Label>
+                          <Input
+                            name="pincode"
+                            value={editedDetails.pincode}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className={
+                              !isEditing
+                                ? "bg-transparent border-transparent px-0 shadow-none h-auto font-medium"
+                                : ""
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
-          {/* Right Column - Interactive Components (1/3) */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Custom Interactive Activity Score Component */}
-            <Card className="overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white pb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-white text-lg pt-4">
-                      Your Activity Score
-                    </CardTitle>
-                    <p className="text-blue-100 text-sm mt-1">
-                      Track your academic engagement
-                    </p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-6">
-                {/* Score Display */}
-                <div className="flex items-center justify-center">
-                  <div className="relative w-32 h-32">
-                    <svg
-                      className="transform -rotate-90 w-32 h-32"
-                      viewBox="0 0 120 120"
+          {/* --- RIGHT COLUMN (Activity Widget) --- */}
+          <div className="lg:col-span-4 space-y-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="overflow-hidden border-border/50 shadow-sm">
+                <CardHeader className="bg-gradient-to-br from-slate-900 to-slate-800 text-white pb-8">
+                  <CardTitle className="text-lg">Activity Score</CardTitle>
+                  <CardDescription className="text-slate-300">
+                    Your engagement metrics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="relative -mt-6">
+                  {/* Floating Stats Card */}
+                  <div className="bg-background rounded-xl shadow-lg border p-6flex flex-col items-center justify-center mb-6">
+                    <div className="relative w-32 h-32 mb-2">
+                      <svg
+                        className="transform -rotate-90 w-32 h-32"
+                        viewBox="0 0 120 120"
+                      >
+                        {/* Defs for Gradient */}
+                        <defs>
+                          <linearGradient
+                            id="scoreGradient"
+                            x1="0%"
+                            y1="0%"
+                            x2="100%"
+                            y2="0%"
+                          >
+                            <stop offset="0%" stopColor="#3b82f6" />
+                            <stop offset="100%" stopColor="#8b5cf6" />
+                          </linearGradient>
+                        </defs>
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="54"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          fill="none"
+                          className="text-slate-100 dark:text-slate-800"
+                        />
+                        <motion.circle
+                          cx="60"
+                          cy="60"
+                          r="54"
+                          stroke="url(#scoreGradient)"
+                          strokeWidth="8"
+                          fill="none"
+                          strokeLinecap="round"
+                          initial={{ strokeDasharray: "0 1000" }}
+                          animate={{
+                            strokeDasharray: `${
+                              (85 / 100) * 2 * Math.PI * 54
+                            } ${2 * Math.PI * 54}`,
+                          }}
+                          transition={{ duration: 1.5, ease: "easeOut" }}
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-bold text-foreground">
+                          85
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Score
+                        </span>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="bg-blue-50 text-blue-700 hover:bg-blue-100"
                     >
-                      <circle
-                        cx="60"
-                        cy="60"
-                        r="54"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="none"
-                        className="text-muted-foreground"
-                      />
-                      <circle
-                        cx="60"
-                        cy="60"
-                        r="54"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="none"
-                        strokeDasharray={`${(85 / 100) * 2 * Math.PI * 54} ${
-                          2 * Math.PI * 54
-                        }`}
-                        className="text-blue-500 transition-all duration-500"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold text-blue-600">
-                        85
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        out of 100
-                      </span>
-                    </div>
+                      Top 15% in Class
+                    </Badge>
                   </div>
-                </div>
 
-                {/* Score Breakdown */}
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-sm">Score Breakdown</h4>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">
-                          Certificates
-                        </span>
-                        <span className="font-medium">28/30</span>
+                  {/* Breakdown */}
+                  <div className="space-y-5">
+                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                      Breakdown
+                    </h4>
+                    {[
+                      {
+                        label: "Certificates",
+                        current: 28,
+                        total: 30,
+                        color: "bg-green-500",
+                      },
+                      {
+                        label: "Internships",
+                        current: 22,
+                        total: 25,
+                        color: "bg-blue-500",
+                      },
+                      {
+                        label: "Events",
+                        current: 18,
+                        total: 20,
+                        color: "bg-purple-500",
+                      },
+                      {
+                        label: "Projects",
+                        current: 17,
+                        total: 25,
+                        color: "bg-orange-500",
+                      },
+                    ].map((item, idx) => (
+                      <div key={idx} className="space-y-1.5">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">{item.label}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {item.current}/{item.total}
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <motion.div
+                            className={`h-full ${item.color}`}
+                            initial={{ width: 0 }}
+                            animate={{
+                              width: `${(item.current / item.total) * 100}%`,
+                            }}
+                            transition={{ duration: 1, delay: 0.5 + idx * 0.1 }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: "93%" }}
-                        ></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">
-                          Internships
-                        </span>
-                        <span className="font-medium">22/25</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full"
-                          style={{ width: "88%" }}
-                        ></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Events</span>
-                        <span className="font-medium">18/20</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-purple-500 h-2 rounded-full"
-                          style={{ width: "90%" }}
-                        ></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Projects</span>
-                        <span className="font-medium">17/25</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-orange-500 h-2 rounded-full"
-                          style={{ width: "68%" }}
-                        ></div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="border-t pt-4 grid grid-cols-2 gap-3">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-blue-600">12</p>
-                    <p className="text-xs text-muted-foreground">Total Items</p>
-                  </div>
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
-                    <p className="text-lg font-bold text-green-600">10</p>
-                    <p className="text-xs text-muted-foreground">Approved</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </main>

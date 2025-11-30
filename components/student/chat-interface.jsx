@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Bot, Trash2, Loader2, Minimize2, Maximize2 } from "lucide-react";
-import { CHAT_STORAGE_KEY } from "./constants";
+import {
+  Send,
+  Bot,
+  RefreshCw,
+  Loader2,
+  Minimize2,
+  Maximize2,
+} from "lucide-react";
 import { createChatSession, sendMessageToGemini } from "@/services/gemini";
 export const ChatInterface = ({ studentProfile }) => {
   const [messages, setMessages] = useState([]);
@@ -12,46 +18,19 @@ export const ChatInterface = ({ studentProfile }) => {
     USER: "user",
     MODEL: "model",
   };
-  // We keep the chat session instance in a ref so it persists across re-renders without recreation
+  // We keep the chat session instance in a ref so it persists across re-renders
+  // This maintains the "session memory" while the user is on the page.
   const chatSessionRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Load history from localStorage on mount
+  // Initialize the Gemini Chat Session on mount (fresh session every time page loads)
   useEffect(() => {
-    const savedData = localStorage.getItem(CHAT_STORAGE_KEY);
-    let initialMessages = [];
-
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        initialMessages = parsed.messages || [];
-      } catch (e) {
-        console.error("Failed to parse chat history", e);
-      }
-    }
-
-    setMessages(initialMessages);
-
-    // Initialize the Gemini Chat Session with the loaded history
-    // We do this inside the effect to ensure it only happens once on mount
-    chatSessionRef.current = createChatSession(initialMessages, studentProfile);
-
-    // Scroll to bottom
-    scrollToBottom();
+    chatSessionRef.current = createChatSession([], studentProfile);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once
+  }, []);
 
-  // Persist messages to localStorage whenever they change
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem(
-        CHAT_STORAGE_KEY,
-        JSON.stringify({
-          lastUpdated: Date.now(),
-          messages,
-        })
-      );
-    }
     scrollToBottom();
   }, [messages]);
 
@@ -78,7 +57,7 @@ export const ChatInterface = ({ studentProfile }) => {
 
     try {
       if (!chatSessionRef.current) {
-        // Fallback re-init if something went wrong, though unlikely
+        // Fallback re-init
         chatSessionRef.current = createChatSession(messages, studentProfile);
       }
 
@@ -102,17 +81,11 @@ export const ChatInterface = ({ studentProfile }) => {
     }
   };
 
-  const handleClearHistory = () => {
-    if (
-      confirm(
-        "Are you sure you want to clear your roadmap history? This cannot be undone."
-      )
-    ) {
-      localStorage.removeItem(CHAT_STORAGE_KEY);
-      setMessages([]);
-      // Re-initialize session with empty history
-      chatSessionRef.current = ([], studentProfile);
-    }
+  const handleResetChat = () => {
+    // Reset the UI state
+    setMessages([]);
+    // Create a brand new session with Gemini (clearing the bot's memory of this convo)
+    chatSessionRef.current = createChatSession([], studentProfile);
   };
 
   const handleKeyPress = (e) => {
@@ -139,8 +112,8 @@ export const ChatInterface = ({ studentProfile }) => {
           </div>
           <div>
             <h3 className="font-bold text-white text-sm">Pathfinder AI</h3>
-            <p className="text-blue-100 text-xs">
-              {isExpanded ? "Your Personal Career Mentor" : "Click to expand"}
+            <p className="text-indigo-100 text-xs">
+              {isExpanded ? "Session Active" : "Click to expand"}
             </p>
           </div>
         </div>
@@ -149,12 +122,12 @@ export const ChatInterface = ({ studentProfile }) => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleClearHistory();
+                handleResetChat();
               }}
-              className="p-2 hover:bg-white/10 rounded-full text-blue-100 transition-colors"
-              title="Clear History"
+              className="p-2 hover:bg-white/10 rounded-full text-indigo-100 transition-colors"
+              title="Reset Conversation"
             >
-              <Trash2 className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4" />
             </button>
           )}
           <button className="p-2 hover:bg-white/10 rounded-full text-white transition-colors">
@@ -173,15 +146,15 @@ export const ChatInterface = ({ studentProfile }) => {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 scrollbar-hide">
             {messages.length === 0 && (
               <div className="text-center mt-10 p-6">
-                <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Bot className="w-8 h-8 text-blue-600" />
+                <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Bot className="w-8 h-8 text-indigo-600" />
                 </div>
                 <h4 className="text-slate-800 font-semibold">
                   Hello, {studentProfile.name}!
                 </h4>
                 <p className="text-slate-500 text-sm mt-2 max-w-xs mx-auto">
-                  I've analyzed your profile. I can help you find projects to
-                  fill your gaps or suggest certifications. Ask me anything!
+                  I'm ready to help with your roadmap. I have your current
+                  project and certificate details loaded.
                 </p>
               </div>
             )}
@@ -198,7 +171,7 @@ export const ChatInterface = ({ studentProfile }) => {
                   max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed shadow-sm
                   ${
                     msg.role === Role.USER
-                      ? "bg-blue-600 text-white rounded-br-none"
+                      ? "bg-indigo-600 text-white rounded-br-none"
                       : "bg-white text-slate-700 border border-slate-100 rounded-bl-none"
                   }
                 `}
@@ -207,7 +180,7 @@ export const ChatInterface = ({ studentProfile }) => {
                   <div
                     className={`text-[10px] mt-2 opacity-70 ${
                       msg.role === Role.USER
-                        ? "text-blue-200"
+                        ? "text-indigo-200"
                         : "text-slate-400"
                     }`}
                   >
@@ -223,7 +196,7 @@ export const ChatInterface = ({ studentProfile }) => {
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-white p-4 rounded-2xl rounded-bl-none border border-slate-100 shadow-sm flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                  <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
                   <span className="text-xs text-slate-500 font-medium">
                     Analyzing roadmap...
                   </span>
@@ -242,7 +215,7 @@ export const ChatInterface = ({ studentProfile }) => {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Ask about your career roadmap..."
-                className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400"
+                className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-slate-400"
                 disabled={isLoading}
               />
               <button
@@ -253,7 +226,7 @@ export const ChatInterface = ({ studentProfile }) => {
                   ${
                     isLoading || !inputText.trim()
                       ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg"
                   }
                 `}
               >

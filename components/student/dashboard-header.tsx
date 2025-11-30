@@ -12,12 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { GraduationCap, Settings, User, LogOut, Bell, Award } from "lucide-react"
-import useAuth from "../useAuth"
 import { useRouter } from "next/navigation"
 
 interface DashboardHeaderProps {
   user?: {
-    name?: string | null;
+    username?: string | null;
     email?: string | null;
   } | null;
 }
@@ -25,8 +24,8 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter();
   const UserPlaceholder = "/placeholder-user.jpg";
-  const userInitials = user?.name
-    ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+  const userInitials = user?.username
+    ? user.username.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
     : "ST";
 
   return (
@@ -63,7 +62,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.name || "Student"}</p>
+                  <p className="text-sm font-medium leading-none">{user?.username || "Student"}</p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email || "student@example.com"}
                   </p>
