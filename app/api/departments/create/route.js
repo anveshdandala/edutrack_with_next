@@ -2,7 +2,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const BACKEND_URL = "http://127.0.0.1:8000";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000";
 
 export async function POST(request) {
   // 1. Get the data sent from the form
