@@ -1,6 +1,8 @@
 import { fetchServer } from "@/lib/server-api";
 import StudentClient from "./student-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function StudentsPage() {
   // 1. Fetch data on the Server
   // This happens BEFORE the page is sent to the browser.
