@@ -1,67 +1,87 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
+const raw =
+  process.env.API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
   "http://127.0.0.1:8000";
+if (!/^https?:\/\/[^\/]+/.test(raw) && !raw.startsWith("http://127.0.0.1")) {
+  console.error("Invalid BACKEND URL env var:", raw);
+}
+const BACKEND_URL = raw.replace(/\/$/, ""); // remove trailing slash if any
 
 export async function POST(request) {
-  const body = await request.json();
-  const { username, password } = body;
-
-  console.log("👉 Login Route: Attempting login for", username);
-  console.log(
-    "👉 Target URL:",
-    `${process.env.NEXT_PUBLIC_API_URL}/auth/jwt/create/`
-  );
-
   try {
-    const res = await fetch(`${BACKEND_URL}/auth/jwt/create/`, {
+    const body = await request.json();
+    const { username, password } = body;
+
+    console.log("👉 Login Route: Attempting login for", username);
+    console.log("👉 Using BACKEND_URL:", BACKEND_URL);
+
+    const target = `${BACKEND_URL}/auth/jwt/create/`;
+    console.log("👉 Target endpoint:", target);
+
+    const res = await fetch(target, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
+      cache: "no-store",
     });
 
-    // Read the text first (safe parsing)
     const responseText = await res.text();
-    console.log(`👉 Django Response (${res.status}):`, responseText);
+    console.log(`👉 Django raw response (status ${res.status}):`, responseText);
 
     let data;
     try {
       data = JSON.parse(responseText);
-    } catch (e) {
-      // If it's HTML (Crash page), return the text
+    } catch (err) {
+      console.log("👉 Response was not JSON");
       return NextResponse.json(
-        { error: "Server Error: " + responseText },
-        { status: 500 }
+        {
+          error: "Upstream server returned non-JSON response",
+          raw: responseText,
+        },
+        { status: 502 }
       );
     }
 
     if (!res.ok) {
-      // Return the FULL error object so we can see it in the browser
       return NextResponse.json(data, { status: res.status });
     }
 
-    // --- Success Logic ---
     const { access, refresh } = data;
-    const cookieStore = cookies();
-    cookieStore.set("accesstoken", access, {
+
+    // Build the response and set cookies on it
+    const nextRes = NextResponse.json(
+      { success: true, user: data },
+      { status: 200 }
+    );
+
+    const secure = process.env.NODE_ENV === "production";
+
+    // Use nextRes.cookies.set(...) to set cookies correctly
+    nextRes.cookies.set({
+      name: "accesstoken",
+      value: access,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
       path: "/",
       sameSite: "lax",
+      secure,
     });
-    cookieStore.set("refreshtoken", refresh, {
+    nextRes.cookies.set({
+      name: "refreshtoken",
+      value: refresh,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
       path: "/",
       sameSite: "lax",
+      secure,
     });
 
-    return NextResponse.json({ success: true, user: data }, { status: 200 });
+    return nextRes;
   } catch (error) {
     console.error("Login Route Critical Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || String(error) },
+      { status: 500 }
+    );
   }
 }
