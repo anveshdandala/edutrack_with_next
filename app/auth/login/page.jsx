@@ -38,6 +38,7 @@ export default function LoginPage() {
 
       // 2. Fetch User Profile via Proxy (Client can't read cookie, so it asks server)
       const res = await fetch("/api/auth/me");
+      console.log("[login] res:", res);
 
       if (!res.ok) {
         throw new Error(
