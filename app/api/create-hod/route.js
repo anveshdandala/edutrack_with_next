@@ -23,14 +23,17 @@ export async function POST(request) {
 
     // 2. Forward to Django
     // Ensure this URL matches your Django URL EXACTLY
-    const djangoRes = await fetch("http://127.0.0.1:8000/create-hod", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(body),
-    });
+    const djangoRes = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/create-hod`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
     // 3. Handle Response Safely (Prevent Crashes)
     const contentType = djangoRes.headers.get("content-type");
