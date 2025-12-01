@@ -13,7 +13,7 @@ export async function POST(request) {
 
   // 2. Get the Token from the Cookie
   const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
+  const token = cookieStore.get("accesstoken")?.value;
 
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

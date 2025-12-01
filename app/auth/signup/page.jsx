@@ -308,7 +308,7 @@ export default function Signup() {
                   <p className="text-sm text-muted-foreground">
                     Already registered?{" "}
                     <Link
-                      href="/login"
+                      href="/auth/login"
                       className="text-primary hover:underline"
                     >
                       Login here

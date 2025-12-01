@@ -7,9 +7,9 @@ export async function POST(request) {
 
   // 1. Check Authentication
   const cookieStore = cookies();
-  const accessToken = cookieStore.get("accesstoken")?.value;
+  const accesstoken = cookieStore.get("accesstoken")?.value;
 
-  if (!accessToken) {
+  if (!accesstoken) {
     console.error("❌ Proxy: No access token found.");
     return NextResponse.json(
       { detail: "Unauthorized: No session token" },
@@ -29,7 +29,7 @@ export async function POST(request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accesstoken}`,
         },
         body: JSON.stringify(body),
       }

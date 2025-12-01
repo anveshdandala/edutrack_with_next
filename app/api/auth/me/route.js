@@ -29,7 +29,7 @@ export async function GET(request) {
     // Try multiple token names for compatibility
     const token =
       cookies["accesstoken"] ||
-      cookies["accessToken"] ||
+      cookies["accesstoken"] ||
       cookies["token"] ||
       cookies["access_token"];
 

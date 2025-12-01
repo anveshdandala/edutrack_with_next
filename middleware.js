@@ -4,16 +4,16 @@ import { NextResponse } from "next/server";
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export async function middleware(request) {
-  const accessToken = request.cookies.get("accessToken")?.value;
+  const accesstoken = request.cookies.get("accesstoken")?.value;
   const refreshToken = request.cookies.get("refreshToken")?.value;
 
   // 1. If we have a valid access token, let them pass
-  if (accessToken) {
+  if (accesstoken) {
     return NextResponse.next();
   }
 
   // 2. If Access is gone, but Refresh exists -> Try to Refresh
-  if (!accessToken && refreshToken) {
+  if (!accesstoken && refreshToken) {
     console.log("Middleware: Access token expired, refreshing...");
     try {
       const res = await fetch(`${BACKEND_URL}/auth/jwt/refresh/`, {
@@ -30,7 +30,7 @@ export async function middleware(request) {
         const response = NextResponse.next();
 
         // Set the new Access Token
-        response.cookies.set("accessToken", newAccess, {
+        response.cookies.set("accesstoken", newAccess, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
