@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+// app/api/auth/me/route.js  (or wherever your route is)
 import { NextResponse } from "next/server";
 
 const raw =
@@ -7,20 +7,31 @@ const raw =
   "http://127.0.0.1:8000";
 const BACKEND_URL = raw.replace(/\/$/, "");
 
-export async function GET() {
+// lightweight cookie parser
+function parseCookies(cookieHeader) {
+  const cookies = {};
+  if (!cookieHeader) return cookies;
+  cookieHeader.split(";").forEach((c) => {
+    const [k, ...v] = c.split("=");
+    if (!k) return;
+    cookies[k.trim()] = decodeURIComponent((v || []).join("=").trim());
+  });
+  return cookies;
+}
+
+export async function GET(request) {
   try {
-    const cookieStore = cookies();
+    // Read raw Cookie header (works consistently in route handlers)
+    const cookieHeader = request.headers.get("cookie");
+    const cookies = parseCookies(cookieHeader);
+    console.log("👉 parsed cookies:", cookies);
 
-    // Debug: print all cookies (helpful while debugging)
-    // Remove or reduce logging in production
-    const all = cookieStore.getAll ? cookieStore.getAll() : [];
-    console.log("👉 cookieStore contents:", all);
-
-    // Accept several possible cookie names for compatibility
+    // Try multiple token names for compatibility
     const token =
-      cookieStore.get("accesstoken")?.value ||
-      cookieStore.get("accessToken")?.value ||
-      cookieStore.get("token")?.value;
+      cookies["accesstoken"] ||
+      cookies["accessToken"] ||
+      cookies["token"] ||
+      cookies["access_token"];
 
     if (!token) {
       console.log("👉 No access token found in cookies");
@@ -40,16 +51,16 @@ export async function GET() {
     });
 
     const text = await res.text();
-    // Try parse JSON, otherwise return raw text for debugging
+
     try {
       const data = JSON.parse(text);
       if (!res.ok) {
+        console.log("👉 Upstream returned non-OK status:", res.status, data);
         return NextResponse.json(data, { status: res.status });
       }
       return NextResponse.json(data, { status: 200 });
     } catch (err) {
-      console.log("👉 /auth/me returned non-JSON:", text.slice(0, 1000));
-      // If server returned HTML or debug page, forward it (502)
+      console.log("👉 /auth/users/me returned non-JSON:", text.slice(0, 1000));
       return NextResponse.json(
         { error: "Upstream returned non-JSON", raw: text },
         { status: 502 }
