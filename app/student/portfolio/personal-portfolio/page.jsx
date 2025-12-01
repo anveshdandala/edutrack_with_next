@@ -4,7 +4,7 @@ import { FocusAreasCard } from "@/components/vercel/focus-areas-card";
 import { PeerComparisonCard } from "@/components/vercel/peer-comparison-card";
 import { SkillMasteryCard } from "@/components/vercel/skill-mastery-card";
 import { Calendar, User, TrendingUp } from "lucide-react";
-import { DashboardHeader } from "@/components//student/dashboard-header";
+import { DashboardHeader } from "@/components/student/dashboard-header";
 export default function MonthlyReportPage() {
   return (
     <>
