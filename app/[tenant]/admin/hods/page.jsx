@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { fetchServer } from "@/lib/server-api";
+import { serverFetch } from "@/lib/server-api";
 import { error } from "console";
 
-export default async function HodsListPage() {
+export default async function HodsListPage({ params }) {
+  const { tenant } = await params;
   let hods = [];
   try {
-    const data = await fetchServer("/list-hods");
+    const data = await serverFetch("/administration/list-hods", {
+      tenant,
+      caches: "no-store",
+    });
     hods = data;
   } catch (e) {
     console.error("failed to get HODS");
@@ -23,7 +27,8 @@ export default async function HodsListPage() {
             Create and manage department heads
           </p>
         </div>
-        <Link href="/institution/hods/create">
+        {/* Corrected Link */}
+        <Link href={`/${tenant}/admin/hods/create`}>
           <Button className="gap-2">
             <Plus className="w-4 h-4" />
             Create HOD
@@ -35,19 +40,20 @@ export default async function HodsListPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {hods.map((hod) => (
           <div
-            key={`${hod.first_name}-${hod.last_name}`}
+            key={`${hod.employee_id}`}
             className="bg-card border border-border rounded-lg p-6 hover:border-primary/50 transition-colors"
           >
             <div className="flex flex-col gap-3">
               <div className="border-b border-border pb-3">
                 <p className="text-sm text-muted-foreground font-medium">
-                  {hod.department.name}
+                  {hod.department}
                 </p>
               </div>
               <div>
                 <p className="text-lg font-semibold text-foreground">
-                  {hod.first_name} {hod.last_name}
+                  {hod.full_name}
                 </p>
+                <p className="text-sm text-foreground">{hod.email}</p>
               </div>
               <button className="mt-2 w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium text-sm">
                 Manage HOD

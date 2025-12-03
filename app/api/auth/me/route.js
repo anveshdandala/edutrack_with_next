@@ -1,46 +1,33 @@
-// app/api/auth/me/route.js  (or wherever your route is)
+// app/api/auth/me/route.js
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-const raw =
+const API_BASE =
   process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE ||
   "http://127.0.0.1:8000";
-const BACKEND_URL = raw.replace(/\/$/, "");
-
-// lightweight cookie parser
-function parseCookies(cookieHeader) {
-  const cookies = {};
-  if (!cookieHeader) return cookies;
-  cookieHeader.split(";").forEach((c) => {
-    const [k, ...v] = c.split("=");
-    if (!k) return;
-    cookies[k.trim()] = decodeURIComponent((v || []).join("=").trim());
-  });
-  return cookies;
-}
 
 export async function GET(request) {
+  // 1. Get the tenant from query params (e.g. ?tenant=vmeg)
+  const { searchParams } = new URL(request.url);
+  const tenant = searchParams.get("tenant");
+
+  if (!tenant) {
+    return NextResponse.json({ error: "Tenant required" }, { status: 400 });
+  }
+
+  // 2. Access the HttpOnly cookie (Allowed here on Server)
+  const cookieStore = await cookies();
+  const token = cookieStore.get("accesstoken")?.value;
+
+  if (!token) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // 3. Call Django on behalf of the user
+  const target = `${API_BASE}/api/${tenant}/auth/users/me/`;
+
   try {
-    // Read raw Cookie header (works consistently in route handlers)
-    const cookieHeader = request.headers.get("cookie");
-    const cookies = parseCookies(cookieHeader);
-    console.log("👉 parsed cookies:", cookies);
-
-    // Try multiple token names for compatibility
-    const token =
-      cookies["accesstoken"] ||
-      cookies["accesstoken"] ||
-      cookies["token"] ||
-      cookies["access_token"];
-
-    if (!token) {
-      console.log("👉 No access token found in cookies");
-      return NextResponse.json({ error: "Not logged in" }, { status: 401 });
-    }
-
-    const target = `${BACKEND_URL}/auth/users/me/`;
-    console.log("👉 Fetching user from:", target);
-
     const res = await fetch(target, {
       method: "GET",
       headers: {
@@ -50,27 +37,16 @@ export async function GET(request) {
       cache: "no-store",
     });
 
-    const text = await res.text();
+    const data = await res.json();
+    console.log("[auth me healper] res", data);
 
-    try {
-      const data = JSON.parse(text);
-      if (!res.ok) {
-        console.log("👉 Upstream returned non-OK status:", res.status, data);
-        return NextResponse.json(data, { status: res.status });
-      }
-      return NextResponse.json(data, { status: 200 });
-    } catch (err) {
-      console.log("👉 /auth/users/me returned non-JSON:", text.slice(0, 1000));
-      return NextResponse.json(
-        { error: "Upstream returned non-JSON", raw: text },
-        { status: 502 }
-      );
+    if (!res.ok) {
+      return NextResponse.json(data, { status: res.status });
     }
+
+    // 4. Return the user data to the client
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    console.error("👉 /api/auth/me critical error:", error);
-    return NextResponse.json(
-      { error: error?.message || String(error) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

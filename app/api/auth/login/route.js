@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-
+import { cookies } from "next/headers";
 const raw =
   process.env.API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
@@ -12,12 +12,13 @@ const BACKEND_URL = raw.replace(/\/$/, ""); // remove trailing slash if any
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { username, password } = body;
+    const { username, password, tenant } = body;
 
     console.log("👉 Login Route: Attempting login for", username);
     console.log("👉 Using BACKEND_URL:", BACKEND_URL);
+    console.log("tenant in route.js:", tenant);
 
-    const target = `${BACKEND_URL}/auth/jwt/create/`;
+    const target = `${BACKEND_URL}/api/${tenant}/auth/jwt/create/`;
     console.log("👉 Target endpoint:", target);
 
     const res = await fetch(target, {

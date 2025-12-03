@@ -1,22 +1,26 @@
+// components/institution/Sidebar.jsx
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation"; // 1. Import useParams
 import { Menu, X } from "lucide-react";
 
-export default function Sidebar() {
+export default function Sidebar({ user }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
+
+  const params = useParams();
+  const tenant = params?.tenant;
 
   const isActive = (path) => pathname === path;
 
   const navItems = [
-    { name: "Dashboard", href: "/institution" },
-    { name: "Departments", href: "/institution/departments" },
-    { name: "HOD Management", href: "/institution/hods" },
-    { name: "Students", href: "/institution/students" },
-    { name: "Insights", href: "/institution/insights" },
+    { name: "Dashboard", href: `/${tenant}/admin` },
+    { name: "Departments", href: `/${tenant}/admin/departments` },
+    { name: "HOD Management", href: `/${tenant}/admin/hods` },
+    { name: "Students", href: `/${tenant}/admin/students` },
+    { name: "Insights", href: `/${tenant}/admin/insights` },
   ];
 
   return (
@@ -29,7 +33,11 @@ export default function Sidebar() {
         >
           {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <div className="w-10" /> {/* Spacer for layout balance */}
+
+        {/* Optional: Show User Name */}
+        <div className="text-sm font-medium text-gray-600">
+          {user?.username || "Admin"}
+        </div>
       </nav>
 
       <div className="flex flex-1 overflow-hidden">

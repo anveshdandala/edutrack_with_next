@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,14 +12,19 @@ import {
 } from "@/components/ui/select";
 
 export default function CreateHodPage() {
+  const router = useRouter();
+  const params = useParams();
+  const tenant = params?.tenant;
+
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
-    department: "",
     username: "",
     email: "",
     password: "",
+    department_id: "", // Changed from 'department' to match backend
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -27,18 +32,45 @@ export default function CreateHodPage() {
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const submit = async (e) => {
-    e?.preventDefault();
+    e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
+
     try {
-      const res = await fetch("/api/create-hod", {
+      // FIX 1: Pass tenant in the URL query string
+      const res = await fetch(`/api/admin/create-hod?tenant=${tenant}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        // Ensure department_id is sent as a number if possible, though JSON is typically forgiving
+        body: JSON.stringify({
+          ...form,
+          department_id: parseInt(form.department_id), // Ensure integer
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || JSON.stringify(data));
+      }
+
+      setSuccess("HOD Created Successfully!");
+      // Optional: Redirect after success
+      // router.push(`/${tenant}/admin/hods`);
+
+      // Reset form
+      setForm({
+        first_name: "",
+        last_name: "",
+        department_id: "",
+        username: "",
+        email: "",
+        password: "",
       });
     } catch (err) {
-      setError(err?.message ?? String(err));
+      console.error(err);
+      setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -111,19 +143,25 @@ export default function CreateHodPage() {
           <div>
             <label className="block text-sm font-medium mb-1">Department</label>
             <Select
-              value={form.department}
-              onValueChange={(value) => setField("department", value)}
+              value={form.department_id}
+              onValueChange={(value) => setField("department_id", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cse">Computer Science</SelectItem>
-                <SelectItem value="ece">Electronics</SelectItem>
-                <SelectItem value="mech">Mechanical</SelectItem>
-                <SelectItem value="civil">FD</SelectItem>
+                {/* NOTE: In a real app, you should fetch these departments from your API.
+                  For now, assuming IDs are 1, 2, 3, 4. 
+                */}
+                <SelectItem value="1">Computer Science (ID: 1)</SelectItem>
+                <SelectItem value="2">Electronics (ID: 2)</SelectItem>
+                <SelectItem value="3">Mechanical (ID: 3)</SelectItem>
+                <SelectItem value="4">FD (ID: 4)</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              * Select values currently hardcoded to IDs 1-4
+            </p>
           </div>
 
           {error && (
@@ -145,18 +183,9 @@ export default function CreateHodPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() =>
-                setForm({
-                  first_name: "",
-                  last_name: "",
-                  department: "",
-                  username: "",
-                  email: "",
-                  password: "",
-                })
-              }
+              onClick={() => router.back()}
             >
-              Reset
+              Cancel
             </Button>
           </div>
         </form>

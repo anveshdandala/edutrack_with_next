@@ -8,7 +8,7 @@ export default function InstitutionDashboardUI({ user }) {
     <div>
       <header className="mb-6">
         <h1 className="text-2xl font-bold">Institution Dashboard</h1>
-        <p className="text-muted">Welcome back, {user?.username}</p>
+        <p className="text">Welcome back, {user?.username}</p>
       </header>
 
       <KPICards />

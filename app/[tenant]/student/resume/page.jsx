@@ -2,11 +2,11 @@
 import { useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import resumeDefaultData from "../../../components/resume/resumeDefaultData.js";
-import ModernTemplate from "../../../components/resume/templates/ModernTemplate";
-import ClassicTemplate from "../../../components/resume/templates/ClassicTemplate";
-import MinimalTemplate from "../../../components/resume/templates/MinimalTemplate";
-import ProfessionalTemplate from "../../../components/resume/templates/ProfessionalTemplate";
+import resumeDefaultData from "../../../../components/resume/resumeDefaultData.js";
+import ModernTemplate from "../../../../components/resume/templates/ModernTemplate.jsx";
+import ClassicTemplate from "../../../../components/resume/templates/ClassicTemplate.jsx";
+import MinimalTemplate from "../../../../components/resume/templates/MinimalTemplate.jsx";
+import ProfessionalTemplate from "../../../../components/resume/templates/ProfessionalTemplate.jsx";
 import { Button } from "@mui/material";
 
 const updateNestedState = (obj, path, value) => {

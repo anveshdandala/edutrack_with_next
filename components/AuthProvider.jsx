@@ -1,40 +1,45 @@
 "use client";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const AuthContext = createContext({
   user: null,
-  login: async () => {},
+  setUser: () => {}, // <--- Key addition: allows LoginPage to update state
   logout: async () => {},
 });
 
 export function AuthProvider({ children, initialUser }) {
-  // Initialize state with the data passed from the Server Layout
+  // 1. Initialize state with data fetched from Server Layout (performance boost)
   const [user, setUser] = useState(initialUser);
   const router = useRouter();
 
-  const login = async (username, password) => {
-    // Call our Next.js API Route
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (!res.ok) throw new Error("Login Failed");
-
-    // Refresh the page so the Server Components (Layout/Page) re-run and see the new cookie
-    router.refresh();
-  };
+  // Sync state if the server passes new data (e.g. after a refresh)
+  useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+    }
+  }, [initialUser]);
 
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      // Call Next.js API route to delete HttpOnly cookies
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
+
+    // Clear client state
     setUser(null);
-    router.push("/login");
+
+    // Refresh server components to ensure cookies are gone on server too
     router.refresh();
+
+    // Redirect to a safe public page (e.g., global login)
+    router.push("/globalLogin");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

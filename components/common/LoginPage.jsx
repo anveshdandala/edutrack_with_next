@@ -1,10 +1,10 @@
+// components/auth/LoginPage.jsx  (client component; your existing code moved here)
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { login } from "@/lib/auth.js";
-import { useAuth } from "@/components/AuthProvider"; // Assuming you still use Context for client-state
 import {
   Card,
   CardContent,
@@ -12,13 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/components/AuthProvider";
+import Cookies from "js-cookie";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InputField from "@/components/common/InputField";
 import CustomButton from "@/components/common/CustomButton";
-
-export default function LoginPage() {
-  const { setUser } = useAuth(); // Optional: Update client context if you keep it
+export default function LoginPage({ tenantMeta }) {
   const router = useRouter();
+  const { setUser } = useAuth();
+  console.log("[LoginPage] tenant ", tenantMeta);
 
   const [activeRole, setActiveRole] = useState("student");
   const [formData, setFormData] = useState({ username: "", password: "" });
@@ -33,57 +35,61 @@ export default function LoginPage() {
     setErrors({});
     setIsSubmitting(true);
 
+    // tenant from server-provided meta (safe)
+    const tenant =
+      tenantMeta?.schema_name ||
+      (typeof window !== "undefined" && window.location.pathname.split("/")[1]);
+    console.log("submitted with tenant:", tenant);
     try {
-      await login(formData.username, formData.password);
+      // 1) authenticate (backend ideally sets HttpOnly cookies)
+      await login(formData.username, formData.password, tenant);
 
-      // 2. Fetch User Profile via Proxy (Client can't read cookie, so it asks server)
-      const res = await fetch("/api/auth/me");
-      console.log("[login] res:", res);
+      const res = await fetch(`/api/auth/me?tenant=${tenant}`);
 
       if (!res.ok) {
-        throw new Error(
-          "Login succeeded, but failed to retrieve user profile."
-        );
+        throw new Error("Failed to fetch user profile");
       }
 
-      const me = await res.json();
+      const user = await res.json();
+      console.log("Fetched User:", user);
 
-      // 3. Update Client Context (Optional, for immediate UI updates)
-      if (setUser) setUser(me);
+      // 3. Update Global Context (Optional but recommended)
+      if (setUser) setUser(user);
 
-      // 4. Validate Role
-      const roleMap = {
-        student: "STUDENT",
-        faculty: "FACULTY", // Adjust based on your backend: "FACULTY" or "HOD"
-        institution: "ADMIN", // Adjust based on backend
-      };
+      // 4. Determine Redirect Path based on Role
+      // Normalize role to uppercase to avoid case issues
+      const role = (
+        user.role ||
+        user.user_type ||
+        user.type ||
+        ""
+      ).toUpperCase();
 
-      const expected = roleMap[activeRole];
-      // Normalize backend role to uppercase string
-      const actual = (me.role || me.user_type || me.type || "").toUpperCase();
+      // Refresh to ensure server components get the new cookie
+      router.refresh();
 
-      // Flexible check for Faculty/HOD overlap
-      const isFacultyMatch =
-        expected === "FACULTY" && (actual === "FACULTY" || actual === "HOD");
-      const isMatch = actual === expected || isFacultyMatch;
-
-      if (isMatch) {
-        // 5. CRITICAL: Refresh router to update Server Components with new Cookie
-        router.refresh();
-
-        // 6. Redirect
-        if (activeRole === "student") router.push("/student");
-        else if (activeRole === "faculty") router.push("/faculty");
-        else if (activeRole === "institution") router.push("/institution");
+      // 5. Intelligent Redirect
+      if (role === "STUDENT") {
+        router.push(`/${tenant}/student`);
+      } else if (role === "FACULTY" || role === "HOD") {
+        router.push(`/${tenant}/faculty`);
+      } else if (role === "ADMIN" || role === "INSTITUTION") {
+        router.push(`/${tenant}/admin`);
       } else {
-        setErrors({
-          general: `Logged in as ${actual}, but you are trying to access the ${activeRole} portal. Please switch tabs.`,
-        });
-        setIsSubmitting(false); // Stop loading so they can switch tabs
+        // Fallback or error if role is unknown
+        console.warn("Unknown role:", role);
+        setErrors({ general: "Login successful, but unknown user role." });
+        setIsSubmitting(false);
       }
     } catch (err) {
-      console.error(err);
-      setErrors({ general: "Invalid username or password" });
+      console.error("login error:", err);
+      // show backend error message if available
+      const msg =
+        err?.body?.detail ||
+        (err.message && err.message !== "Failed to fetch"
+          ? err.message
+          : "Invalid username or password");
+      setErrors({ general: msg });
       setIsSubmitting(false);
     }
   };
@@ -91,15 +97,30 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="container mx-auto px-4">
-        <Link href="/">
+        <Link href="/globalLogin">
           <button className="flex items-center gap-2 text-primary hover:underline mb-8">
             <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            Change college
           </button>
         </Link>
 
         <div className="max-w-md mx-auto">
-          <div className="text-center mb-8">
+          {/* render tenant info at top */}
+          {tenantMeta && (
+            <div className="text-center mb-6">
+              {tenantMeta.logo_url ? (
+                <img
+                  src={tenantMeta.logo_url}
+                  alt={tenantMeta.name}
+                  className="mx-auto h-12 mb-2"
+                />
+              ) : null}
+              <div className="font-semibold">{tenantMeta.name}</div>
+              <div className="text-sm text-gray-500">{tenantMeta.domain}</div>
+            </div>
+          )}
+
+          <div className="text-center mb-4">
             <h1 className="text-3xl font-bold">Welcome Back</h1>
             <p className="text-muted-foreground mt-2">
               Sign in to your account

@@ -7,6 +7,7 @@ import { AcademicDetailsCard } from "@/components/student/academic-details-card"
 import { ActivityScoreCard } from "@/components/student/activity-score-card";
 import { CarouselSection } from "@/components/student/carousel-section";
 import { ChatInterface } from "@/components/student/chat-interface";
+
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
