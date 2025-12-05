@@ -30,7 +30,7 @@ export default function StudentDashboardUI({ user }) {
             <AcademicDetailsCard />
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
-            <ActivityScoreCard />
+            <ActivityScoreCard user={user} />
           </motion.div>
         </div>
 

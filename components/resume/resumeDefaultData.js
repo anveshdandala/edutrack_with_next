@@ -1,51 +1,51 @@
 const resumeDefaultData = {
-  personalInfo: {
-    name: "Alex Morgan",
-    title: "Senior Product Designer",
-    email: "alex.morgan@example.com",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    summary:
-      "Creative and detail-oriented Product Designer with over 6 years of experience in building user-centric digital products. Proficient in translating complex requirements into intuitive and visually appealing designs. passionate about design systems and accessibility.",
-    website: "www.alexmorgan.design",
-    linkedin: "linkedin.com/in/alexmorgan",
-  },
-  experience: [
+  name: "Alice Johnson",
+  email: "student3@example.com",
+  skills: [
     {
-      id: 1,
-      role: "Senior UI/UX Designer",
-      company: "TechFlow Solutions",
-      date: "2021 - Present",
-      description:
-        "Leading the design system initiative and mentoring junior designers. improved user engagement by 40% through a complete redesign of the core dashboard.",
-    },
-    {
-      id: 2,
-      role: "Product Designer",
-      company: "Creative Pulse",
-      date: "2018 - 2021",
-      description:
-        "Collaborated with cross-functional teams to launch 3 major mobile applications. Conducted user research and usability testing to iterate on product features.",
+      title: "Technical Skills",
+      skills: [
+        "Python",
+        "Django",
+        "Django ORM",
+        "Authentication systems",
+        "REST APIs",
+        "Backend development",
+        "Backend architecture",
+      ],
     },
   ],
+  address: "Madhura Nagar, Shamshabad, Telangana, 501218, India",
+  summary:
+    "A motivated individual with a strong foundation in Python and Django, seeking to leverage acquired knowledge in backend development. Possesses a Django certification with hands-on experience in building web applications, ORM, authentication, and REST APIs. Eager to contribute to robust, production-ready applications and scalable backend architecture.",
+  position: "Django developer with python and good experience",
+  projects: [],
   education: [
     {
-      id: 1,
-      degree: "Bachelor of Fine Arts in Interaction Design",
-      school: "California College of the Arts",
-      date: "2014 - 2018",
+      degree: "",
+      school: "Vardhaman College of Engineering",
+      endYear: "",
+      startYear: "",
+    },
+    {
+      degree: "",
+      school: "New Vision Junior College",
+      endYear: "",
+      startYear: "",
+    },
+    {
+      degree: "",
+      school: "V.V.Central Public School",
+      endYear: "",
+      startYear: "",
     },
   ],
-  skills: [
-    "Figma",
-    "Adobe XD",
-    "React",
-    "CSS/SASS",
-    "Prototyping",
-    "User Research",
-    "Design Systems",
-    "Agile",
-  ],
+  languages: [],
+  socialMedia: [],
+  certifications: ["python certificate", "Django Certification"],
+  profilePicture: "",
+  workExperience: [],
+  contactInformation: "Madhura Nagar, Shamshabad, Telangana, 501218, India",
 };
 
 export default resumeDefaultData;

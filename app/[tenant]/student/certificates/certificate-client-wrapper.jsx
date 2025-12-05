@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-
+import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,26 +31,25 @@ export default function CertificateClientWrapper({
   initialCertificates,
 }) {
   const router = useRouter();
+  const params = useParams();
 
-  // State for interactivity
+  // 1. Get Tenant from URL params
+  const tenant = params.tenant;
+
+  // State
   const scrollRef = useRef(null);
   const [certificates, setCertificates] = useState(initialCertificates);
   const [selectedType, setSelectedType] = useState("seminars");
   const [verificationLink, setVerificationLink] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(false);
-  // Auth Protection
-  useEffect(() => {
-    if (!loading && !user) router.push("/auth/login");
-  }, [loading, user, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="text-sm text-muted-foreground">Verifying access...</div>
-      </div>
-    );
-  }
+  // 2. Auth Protection (Client Side Guard)
+  useEffect(() => {
+    // FIX: Redirect to the TENANT SPECIFIC login page, not global /auth/login
+    if (!user) {
+      router.push(`/${tenant}/auth/login`);
+    }
+  }, [user, router, tenant]);
 
   // Logic Handlers
   const handleAddCertificate = async () => {
@@ -68,8 +66,6 @@ export default function CertificateClientWrapper({
         date: new Date().toISOString().split("T")[0],
         issuer: "Pending Issuer",
       };
-
-      // Update local state immediately (Optimistic UI)
       setCertificates([newCert, ...certificates]);
       setIsSubmitting(false);
       setVerificationLink("");
@@ -86,6 +82,9 @@ export default function CertificateClientWrapper({
     }
   };
 
+  // If no user yet, don't render the sensitive UI (prevents flash)
+  if (!user) return null;
+
   return (
     <>
       {/* Navigation & Actions Toolbar */}
@@ -101,13 +100,24 @@ export default function CertificateClientWrapper({
               <Button
                 variant="outline"
                 onClick={() =>
-                  router.push("/student/portfolio/personal-portfolio")
+                  router.push(
+                    `/${tenant}/student/portfolio/professional-portfolio`
+                  )
                 }
               >
-                Personal Report
+                portfolio
               </Button>
               <Button
-                onClick={() => router.push("/student/resume")}
+                variant="outline"
+                onClick={() =>
+                  router.push(`/${tenant}/student/portfolio/personal-portfolio`)
+                }
+              >
+                personal Report
+              </Button>
+              <Button
+                // FIX: Ensure absolute path with leading slash
+                onClick={() => router.push(`/${tenant}/student/resume`)}
                 className="flex items-center gap-2"
               >
                 <Eye className="h-4 w-4" />

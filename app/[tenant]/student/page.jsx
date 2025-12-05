@@ -5,7 +5,7 @@ import StudentDashboardUI from "./dashboard-ui";
 
 export default async function StudentPage({ params }) {
   // 1. Get the tenant from the URL (e.g., 'vmeg')
-  const { tenant } = await params; // (Note: await params is required in Next.js 15, optional in 14)
+  const { tenant } = await params;
 
   let user = null;
 

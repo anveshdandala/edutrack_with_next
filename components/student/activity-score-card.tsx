@@ -6,15 +6,23 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, ArrowRight,ChevronRight, Award, Star } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"; // 1. Import motion
-
-export function ActivityScoreCard() {
-  const router = useRouter()
+import { useParams } from "next/navigation";
+import { useEffect } from "react"
+export function ActivityScoreCard({ user }: { user: any }) {
+  const params = useParams(); // params.tenant will work
+  const router = useRouter();
+  const tenant =params.tenant;
+  useEffect(() => {
+    console.log("Tenant from URL:", params.tenant);
+    console.log("User from Props:", user);
+  }, [params.tenant, user]);
+  
 
   
   return (
     <Card 
       className="h-full border-border/50 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden"
-      onClick={() => router.push("/student/certificates")}
+      onClick={() => router.push(`/${tenant}/student/certificates`)}
     >
       {/* Decorative background gradient */}
       <div className="absolute top-0 right-0 p-16 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />

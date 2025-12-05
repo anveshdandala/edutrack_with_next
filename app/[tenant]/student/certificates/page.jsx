@@ -1,15 +1,15 @@
 import { Suspense } from "react";
-import { DashboardHeader } from "@/components/student/dashboard-header"; // Assuming this is shared
 import CertificateClientWrapper from "./certificate-client-wrapper";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchServer } from "@/lib/server-api";
+import { serverFetch } from "@/lib/server-api";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-// Mock Data Fetching (Replace this with your actual DB/API call)
+// import { DashboardHeader } from "@/components/student/dashboard-header"; // Uncomment if you have this component
+
+// Mock Data Fetching (Simulating API delay)
 async function getCertificates() {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 500)); // 500ms delay for realism
 
   return [
     {
@@ -28,40 +28,55 @@ async function getCertificates() {
       date: "2024-01-20",
       issuer: "IEEE",
     },
-    // ... add rest of your data
+    {
+      id: 3,
+      type: "internships",
+      name: "Summer Intern @ Google",
+      link: "https://example.com/cert3",
+      date: "2023-08-30",
+      issuer: "Google",
+    },
   ];
 }
 
-export default async function CertificatesPage() {
-  // Fetch data on the server
+export default async function CertificatesPage({ params }) {
+  // 1. Get Tenant from URL for Navigation Links
+  const { tenant } = await params;
+
+  const user = await serverFetch("/auth/users/me/", {
+    tenant,
+  });
   const certificates = await getCertificates();
-  const user = await fetchServer("/auth/users/me");
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header can likely be server rendered or client, depending on implementation */}
-      <DashboardHeader />
+      {/* <DashboardHeader user={user} /> */}
 
       <main className="container mx-auto px-4 py-8">
-        <Link href="/student">
-          <Button variant="ghost">
+        {/* Dynamic Back Link using 'tenant' */}
+        <Link href={`/${tenant}/student`}>
+          <Button
+            variant="ghost"
+            className="mb-6 pl-0 hover:pl-2 transition-all"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
           </Button>
         </Link>
+
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Certificate Uploads</h1>
-          <p className="text-muted-foreground">
-            Upload and manage your academic certificates
+          <p className="text-muted-foreground mt-2">
+            Upload and manage your academic certificates for{" "}
+            {tenant.toUpperCase()}
           </p>
         </div>
 
-        {/* We wrap the interactive parts in Suspense and a Client Component.
-          We pass the server-fetched certificates as 'initialData'.
-        */}
         <Suspense fallback={<CertificatesLoadingSkeleton />}>
           <CertificateClientWrapper
             user={user}
             initialCertificates={certificates}
+            tenant={tenant} // Pass tenant if client wrapper needs it for uploads
           />
         </Suspense>
       </main>
@@ -72,12 +87,12 @@ export default async function CertificatesPage() {
 function CertificatesLoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <Skeleton className="h-[200px] w-full rounded-xl" />
-      <div className="flex gap-4 overflow-hidden">
-        <Skeleton className="h-[180px] w-[300px]" />
-        <Skeleton className="h-[180px] w-[300px]" />
-        <Skeleton className="h-[180px] w-[300px]" />
+      <div className="grid gap-4 md:grid-cols-3">
+        <Skeleton className="h-[120px] rounded-xl" />
+        <Skeleton className="h-[120px] rounded-xl" />
+        <Skeleton className="h-[120px] rounded-xl" />
       </div>
+      <Skeleton className="h-[400px] w-full rounded-xl" />
     </div>
   );
 }
