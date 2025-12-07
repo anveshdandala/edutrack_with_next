@@ -1,17 +1,8 @@
 "use client"
-import Image from "next/image"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { GraduationCap, Settings, User, LogOut, Bell, Award } from "lucide-react"
+import { GraduationCap, Settings, User, LogOut, Bell, Award, Menu } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface DashboardHeaderProps {
@@ -23,6 +14,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const UserPlaceholder = "/placeholder-user.jpg";
   const userInitials = user?.username
     ? user.username.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
@@ -32,7 +24,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl">
         {/* Logo */}
-        <div 
+        <div
           className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-80"
           onClick={() => router.push("/student/dashboard")}
         >
@@ -47,43 +39,46 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
             <Bell className="h-5 w-5" />
           </Button>
-          
+
           <ThemeToggle />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-primary/10 hover:ring-primary/30 transition-all p-0 overflow-hidden">
-                <Avatar className="h-9 w-9">
-                    <AvatarImage src={UserPlaceholder} alt="User" />
-                    <AvatarFallback>{userInitials}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.username || "Student"}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user?.email || "student@example.com"}
+          <div className="relative">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all"
+            >
+              <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
+                {userInitials}
+              </div>
+              <Menu size={18} className="text-gray-600" />
+            </button>
+
+            {isMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="px-4 py-2 border-b border-gray-50 mb-2">
+                  <p className="text-sm font-bold text-gray-900">
+                    {user?.username || "Alex Chen"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user?.email || "Student ID: 23881A66F5"}
                   </p>
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push("/student/profile")}>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/student/certificates")}>
-                <Award className="mr-2 h-4 w-4" />
-                <span>Certificates</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <button
+                  onClick={() => router.push("/student/profile")}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-blue-600 flex items-center gap-2"
+                >
+                  <User size={16} /> Profile
+                </button>
+                <button className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-blue-600 flex items-center gap-2">
+                  <Settings size={16} /> Settings
+                </button>
+                <div className="border-t border-gray-50 my-1"></div>
+                <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                  <LogOut size={16} /> Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

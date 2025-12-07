@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ResumeBuilder from "@/components/resume/ResumeBuilder";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Save } from "lucide-react";
@@ -31,14 +31,35 @@ export default function ResumeEditorClient({ tenant, baseData }) {
     }
   }, [baseData]);
 
-  const handleSave = async (currentData) => {
+  const latestDataRef = useRef(resumeData);
+
+  // Sync ref when initial data loads
+  useEffect(() => {
+    latestDataRef.current = resumeData;
+  }, [resumeData]);
+
+  const handleDataChange = (newData) => {
+    // 1. Update the Ref (for the Save button)
+    latestDataRef.current = newData;
+    
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("ai_generated_resume", JSON.stringify(newData));
+    }
+    
+    console.log("[User Input] Auto-saved to session storage:", newData.name);
+  };
+
+  const handleSave = async () => {
+    const dataToSave = latestDataRef.current;
+    if (!dataToSave) return;
+
     setIsSaving(true);
     try {
       const res = await fetch(`/api/resume/update?tenant=${tenant}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tailored_content: currentData,
+          tailored_content: dataToSave,
           template_style: "MODERN",
         }),
       });
@@ -63,7 +84,7 @@ export default function ResumeEditorClient({ tenant, baseData }) {
   return (
     <div>
       {/* Top Bar */}
-      <div className="bg-white border-b px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+      <div className="bg-white border-b px-6 py-3 flex justify-between items-center sticky top-0 z-50 print:hidden">
         <Button
           variant="ghost"
           onClick={() => router.push(`/${tenant}/student/resume`)}
@@ -72,7 +93,7 @@ export default function ResumeEditorClient({ tenant, baseData }) {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Generator
         </Button>
         <div className="font-semibold text-gray-800">Resume Editor</div>
-        <Button onClick={() => handleSave(resumeData)} disabled={isSaving}>
+        <Button onClick={handleSave} disabled={isSaving}>
           <Save className="mr-2 h-4 w-4" />
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>
@@ -83,6 +104,7 @@ export default function ResumeEditorClient({ tenant, baseData }) {
         initialData={resumeData}
         key={JSON.stringify(resumeData)} // Force re-render if data changes
         onSaveExternal={handleSave}
+        onDataChange={handleDataChange}
       />
     </div>
   );

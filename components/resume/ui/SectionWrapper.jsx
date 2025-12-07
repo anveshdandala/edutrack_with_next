@@ -7,6 +7,7 @@ const SectionWrapper = ({
   onAdd,
   onHide,
   className = "",
+  titleClassName = "",
   style,
   color,
 }) => {
@@ -51,7 +52,7 @@ const SectionWrapper = ({
 
       {title && (
         <h3
-          className="uppercase font-bold text-sm mb-3 pb-1 border-b"
+          className={`uppercase font-bold text-sm mb-3 pb-1 border-b ${titleClassName}`}
           style={{ borderColor: color || "#e5e7eb", color: color }}
         >
           {title}

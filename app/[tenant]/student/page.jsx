@@ -18,10 +18,10 @@ export default async function StudentPage({ params }) {
   } catch (e) {
     console.error("Failed to fetch user:", e.message);
     // If unauthorized, go back to login
-    redirect(`/${tenant}/login`);
+    redirect(`/${tenant}/auth/login`);
   }
 
-  if (!user) redirect(`/${tenant}/login`);
+  if (!user) redirect(`/${tenant}/auth/login`);
 
   return <StudentDashboardUI user={user} />;
 }

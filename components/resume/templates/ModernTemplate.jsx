@@ -78,23 +78,74 @@ const ModernTemplate = ({
     >
       {/* Header */}
       <header
-        className="p-10 text-white"
+        className="p-10 text-white flex justify-between items-start gap-8"
         style={{ backgroundColor: primaryColor }}
       >
-        <EditableText
-          tagName="h1"
-          value={data.name}
-          onChange={(val) => onUpdate("name", val)}
-          className="text-4xl font-bold mb-2 block w-full"
-          placeholder="Your Name"
-        />
-        <EditableText
-          tagName="p"
-          value={data.position}
-          onChange={(val) => onUpdate("position", val)}
-          className="text-xl opacity-90 block w-full"
-          placeholder="Professional Title"
-        />
+        <div className="flex-1">
+            <EditableText
+            tagName="h1"
+            value={data.name || "Your Name"}
+            onChange={(val) => onUpdate("name", val)}
+            className="text-4xl font-bold mb-2 block w-full"
+            placeholder="Your Name"
+            />
+            <EditableText
+            tagName="p"
+            value={data.position || "Professional Title"}
+            onChange={(val) => onUpdate("position", val)}
+            className="text-xl opacity-90 block w-full"
+            placeholder="Professional Title"
+            />
+        </div>
+
+        <div className="w-1/3 text-right">
+             <SectionWrapper title="" className="mb-0" color="white" titleClassName="text-white/80 border-white/40">
+                <div className="flex flex-col gap-2 text-sm items-end text-white/90">
+                <div className="flex items-center gap-2 justify-end">
+                    <EditableText
+                    value={data.email || ""}
+                    onChange={(v) => onUpdate("email", v)}
+                    className="w-full text-right"
+                    placeholder="Email"
+                    />
+                    <Mail size={14} className="shrink-0" />
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                    <EditableText
+                    value={data.contactInformation || data.phone || ""}
+                    onChange={(v) => onUpdate("contactInformation", v)}
+                    className="w-full text-right"
+                    placeholder="Phone"
+                    />
+                    <Phone size={14} className="shrink-0" />
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                    <EditableText
+                    value={data.address ? data.address.split(',').slice(0, 2).map(s => s.trim()).join(', ') : ""}
+                    onChange={(v) => onUpdate("address", v)}
+                    className="w-full text-right"
+                    placeholder="Address"
+                    multiline
+                    />
+                    <MapPin size={14} className="shrink-0" />
+                </div>
+                {(data.socialMedia || []).map((social, idx) => (
+                    <SectionItemWrapper
+                    key={idx}
+                    onDelete={() => onRemove("socialMedia", idx)}
+                    className="flex items-center gap-2 justify-end"
+                    >
+                    <EditableText
+                        value={typeof social === 'string' ? social : social.url}
+                        onChange={(v) => onUpdate(`socialMedia[${idx}].url`, v)}
+                        className="w-full text-right"
+                    />
+                    <Globe size={14} className="shrink-0" />
+                    </SectionItemWrapper>
+                ))}
+                </div>
+            </SectionWrapper>
+        </div>
       </header>
 
       <div
@@ -119,54 +170,10 @@ const ModernTemplate = ({
           style={{ width: isSingleCol ? "100%" : `${leftColumnWidth}%` }}
         >
           {/* Contact */}
-          <SectionWrapper title="Contact" className="mb-8" color={primaryColor}>
-            <div className="flex flex-col gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <Mail size={14} className="shrink-0" />
-                <EditableText
-                  value={data.email}
-                  onChange={(v) => onUpdate("email", v)}
-                  className="w-full"
-                  placeholder="Email"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone size={14} className="shrink-0" />
-                <EditableText
-                  value={data.phone}
-                  onChange={(v) => onUpdate("phone", v)}
-                  className="w-full"
-                  placeholder="Phone"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin size={14} className="shrink-0" />
-                <EditableText
-                  value={data.address}
-                  onChange={(v) => onUpdate("address", v)}
-                  className="w-full"
-                  placeholder="Address"
-                />
-              </div>
-              {data.socialMedia.map((social, idx) => (
-                <SectionItemWrapper
-                  key={idx}
-                  onDelete={() => onRemove("socialMedia", idx)}
-                  className="flex items-center gap-2"
-                >
-                  <Globe size={14} className="shrink-0" />
-                  <EditableText
-                    value={social.url}
-                    onChange={(v) => onUpdate(`socialMedia[${idx}].url`, v)}
-                    className="w-full"
-                  />
-                </SectionItemWrapper>
-              ))}
-            </div>
-          </SectionWrapper>
+          
 
           {/* Education */}
-          {isVisible("education") && (
+          {isVisible("education") && (data.education || []).length > 0 && (
             <SectionWrapper
               title="Education"
               className="mb-8"
@@ -181,7 +188,7 @@ const ModernTemplate = ({
               onHide={() => onToggleSection("education")}
               color={primaryColor}
             >
-              {data.education.map((edu, idx) => (
+              {(data.education || []).map((edu, idx) => (
                 <SectionItemWrapper
                   key={idx}
                   onDelete={() => onRemove("education", idx)}
@@ -198,6 +205,7 @@ const ModernTemplate = ({
                     onChange={(v) => onUpdate(`education[${idx}].school`, v)}
                     className="text-sm block"
                     placeholder="School"
+                    multiline
                   />
                   <div className="flex gap-1 text-xs text-slate-500 mt-1">
                     <EditableText
@@ -218,7 +226,7 @@ const ModernTemplate = ({
           )}
 
           {/* Skills */}
-          {isVisible("skills") && (
+          {isVisible("skills") && (data.skills || []).length > 0 && (
             <SectionWrapper
               title="Skills"
               onAdd={() =>
@@ -227,87 +235,99 @@ const ModernTemplate = ({
               onHide={() => onToggleSection("skills")}
               color={primaryColor}
             >
-              {data.skills.map((skillGroup, idx) => (
-                <SectionItemWrapper
-                  key={idx}
-                  onDelete={() => onRemove("skills", idx)}
-                  className="mb-4"
-                >
-                  <EditableText
-                    value={skillGroup.title}
-                    onChange={(v) => onUpdate(`skills[${idx}].title`, v)}
-                    className="font-semibold text-xs text-slate-500 uppercase mb-2"
-                    placeholder="CATEGORY"
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    {skillGroup.skills.map((skill, sIdx) => (
-                      <div
-                        key={sIdx}
-                        className="relative group/skill flex-grow-0"
-                      >
-                        <EditableText
-                          value={skill}
-                          onChange={(v) => {
-                            const newSkills = [...skillGroup.skills];
-                            newSkills[sIdx] = v;
-                            onUpdate(`skills[${idx}].skills`, newSkills);
-                          }}
-                          className="bg-white border border-slate-200 rounded px-2 py-1 text-xs w-full min-w-[30px]"
-                        />
-                        <button
-                          onClick={() => {
-                            const newSkills = skillGroup.skills.filter(
-                              (_, i) => i !== sIdx
-                            );
-                            onUpdate(`skills[${idx}].skills`, newSkills);
-                          }}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/skill:opacity-100 transition-opacity print:hidden"
-                        >
-                          <X size={8} />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => {
-                        const newSkills = [...skillGroup.skills, "New"];
-                        onUpdate(`skills[${idx}].skills`, newSkills);
-                      }}
-                      className="text-xs text-blue-500 px-1 hover:underline print:hidden"
+              {(data.skills || []).map((skillGroup, idx) => {
+                  // Handle if skillGroup is just a string (rare but possible in some formats)
+                  if (typeof skillGroup === 'string') return null;
+
+                  return (
+                    <SectionItemWrapper
+                    key={idx}
+                    onDelete={() => onRemove("skills", idx)}
+                    className="mb-4"
                     >
-                      +
-                    </button>
-                  </div>
-                </SectionItemWrapper>
-              ))}
+                    <EditableText
+                        value={skillGroup.title}
+                        onChange={(v) => onUpdate(`skills[${idx}].title`, v)}
+                        className="font-semibold text-xs text-slate-500 uppercase mb-2"
+                        placeholder="CATEGORY"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                        {(skillGroup.skills || []).map((skill, sIdx) => (
+                        <div
+                            key={sIdx}
+                            className="relative group/skill flex-grow-0"
+                        >
+                            <EditableText
+                            value={skill}
+                            onChange={(v) => {
+                                const newSkills = [...skillGroup.skills];
+                                newSkills[sIdx] = v;
+                                onUpdate(`skills[${idx}].skills`, newSkills);
+                            }}
+                            className="bg-white border border-slate-200 rounded px-2 py-1 text-xs w-full min-w-[30px]"
+                            />
+                            <button
+                            onClick={() => {
+                                const newSkills = skillGroup.skills.filter(
+                                (_, i) => i !== sIdx
+                                );
+                                onUpdate(`skills[${idx}].skills`, newSkills);
+                            }}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/skill:opacity-100 transition-opacity print:hidden"
+                            >
+                            <X size={8} />
+                            </button>
+                        </div>
+                        ))}
+                        <button
+                        onClick={() => {
+                            const newSkills = [...(skillGroup.skills || []), "New"];
+                            onUpdate(`skills[${idx}].skills`, newSkills);
+                        }}
+                        className="text-xs text-blue-500 px-1 hover:underline print:hidden"
+                        >
+                        +
+                        </button>
+                    </div>
+                    </SectionItemWrapper>
+                  )
+              })}
             </SectionWrapper>
           )}
 
-          {/* Certifications */}
-          {isVisible("certifications") && data.certifications.length > 0 && (
+          {/* Languages */}
+          {isVisible("languages") && (data.languages || []).length > 0 && (
             <SectionWrapper
-              title="Certifications"
+              title="Languages"
               className="mt-8"
-              onAdd={() => onAdd("certifications", "Name")}
-              onHide={() => onToggleSection("certifications")}
+              onAdd={() => onAdd("languages", "Language")}
+              onHide={() => onToggleSection("languages")}
               color={primaryColor}
             >
               <ul className="list-disc ml-4">
-                {data.certifications.map((cert, idx) => (
-                  <li key={idx} className="text-sm mb-1">
-                    <SectionItemWrapper
-                      onDelete={() => onRemove("certifications", idx)}
-                    >
-                      <EditableText
-                        value={cert}
-                        onChange={(v) => {
-                          const c = [...data.certifications];
-                          c[idx] = v;
-                          onUpdate("certifications", c);
-                        }}
-                      />
-                    </SectionItemWrapper>
-                  </li>
-                ))}
+                {(data.languages || []).map((lang, idx) => {
+                  const langName = typeof lang === 'string' ? lang : lang.name;
+                  return (
+                    <li key={idx} className="text-sm mb-1">
+                        <SectionItemWrapper
+                        onDelete={() => onRemove("languages", idx)}
+                        >
+                        <EditableText
+                            value={langName}
+                            onChange={(v) => {
+                                const l = [...data.languages];
+                                if (typeof l[idx] === 'string') {
+                                    l[idx] = v;
+                                } else {
+                                    l[idx] = { ...l[idx], name: v };
+                                }
+                                onUpdate("languages", l);
+                            }}
+                        />
+                        </SectionItemWrapper>
+                    </li>
+                  );
+                })}
               </ul>
             </SectionWrapper>
           )}
@@ -328,7 +348,7 @@ const ModernTemplate = ({
             >
               <EditableText
                 multiline
-                value={data.summary}
+                value={data.summary || ""}
                 onChange={(val) => onUpdate("summary", val)}
                 className="leading-relaxed"
               />
@@ -336,7 +356,7 @@ const ModernTemplate = ({
           )}
 
           {/* Experience */}
-          {isVisible("workExperience") && (
+          {isVisible("workExperience") && (data.workExperience || []).length > 0 && (
             <SectionWrapper
               title="Experience"
               className="mb-8"
@@ -352,7 +372,7 @@ const ModernTemplate = ({
               onHide={() => onToggleSection("workExperience")}
               color={primaryColor}
             >
-              {data.workExperience.map((exp, index) => (
+              {(data.workExperience || []).map((exp, index) => (
                 <SectionItemWrapper
                   key={index}
                   onDelete={() => onRemove("workExperience", index)}
@@ -406,7 +426,7 @@ const ModernTemplate = ({
           )}
 
           {/* Projects */}
-          {isVisible("projects") && data.projects.length > 0 && (
+          {isVisible("projects") && (data.projects || []).length > 0 && (
             <SectionWrapper
               title="Projects"
               className="mb-8"
@@ -420,7 +440,7 @@ const ModernTemplate = ({
               onHide={() => onToggleSection("projects")}
               color={primaryColor}
             >
-              {data.projects.map((proj, index) => (
+              {(data.projects || []).map((proj, index) => (
                 <SectionItemWrapper
                   key={index}
                   onDelete={() => onRemove("projects", index)}
@@ -462,6 +482,43 @@ const ModernTemplate = ({
                   />
                 </SectionItemWrapper>
               ))}
+            </SectionWrapper>
+          )}
+
+          {/* Certifications */}
+          {isVisible("certifications") && (data.certifications || []).length > 0 && (
+            <SectionWrapper
+              title="Certifications"
+              className="mb-8"
+              onAdd={() => onAdd("certifications", "Name")}
+              onHide={() => onToggleSection("certifications")}
+              color={primaryColor}
+            >
+              <ul className="list-disc ml-4">
+                {(data.certifications || []).map((cert, idx) => {
+                  const certName = typeof cert === 'string' ? cert : (cert.name || cert.title);
+                  return (
+                    <li key={idx} className="text-sm mb-1">
+                        <SectionItemWrapper
+                        onDelete={() => onRemove("certifications", idx)}
+                        >
+                        <EditableText
+                            value={certName}
+                            onChange={(v) => {
+                            const c = [...data.certifications];
+                            if (typeof c[idx] === 'string') {
+                                c[idx] = v;
+                            } else {
+                                c[idx] = { ...c[idx], name: v };
+                            }
+                            onUpdate("certifications", c);
+                            }}
+                        />
+                        </SectionItemWrapper>
+                    </li>
+                  );
+                })}
+              </ul>
             </SectionWrapper>
           )}
         </div>

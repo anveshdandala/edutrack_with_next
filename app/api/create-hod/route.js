@@ -24,7 +24,7 @@ export async function POST(request) {
     // 2. Forward to Django
     // Ensure this URL matches your Django URL EXACTLY
     const djangoRes = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/create-hod`,
+      `${process.env.NEXT_PUBLIC_API_BASE}/create-hod`,
       {
         method: "POST",
         headers: {

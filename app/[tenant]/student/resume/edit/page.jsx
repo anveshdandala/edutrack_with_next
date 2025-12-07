@@ -7,9 +7,9 @@ export default async function ResumeEditorPage({ params }) {
 
   // Fetch base profile in case user refreshes or comes here directly
   const userData = await serverFetch("/auth/users/me/", { tenant });
-
+  
   if (!userData) {
-    redirect(`/${tenant}/login`);
+    redirect(`/${tenant}/auth/login`);
   }
 
   return (

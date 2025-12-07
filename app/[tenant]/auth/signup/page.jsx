@@ -94,7 +94,7 @@ export default function Signup() {
       console.log("Submitting form data:", formData);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/institution-register`,
+        `${process.env.NEXT_PUBLIC_API_BASE}/institution-register`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -1,84 +1,183 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation"; 
 import JobInputForm from "@/components/resume/JobInputForm";
-import ResumeBuilder from "@/components/resume/ResumeBuilder"; // Your existing builder
+import ResumeBuilder from "@/components/resume/ResumeBuilder";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Loader2, CheckCircle2 } from "lucide-react";
 import resumeDefaultData from "@/components/resume/resumeDefaultData";
-export default function ResumeClientWrapper({ tenant }) {
-  // Steps: 'input' -> 'editor'
-  const [step, setStep] = useState("input");
+
+export default function ResumeClientWrapper() {
+  const params = useParams();
+  const router = useRouter();
+  const tenant = params.tenant;
+  
+  // Keys for LocalStorage
+  const ID_KEY = `current_resume_id_${tenant}`;
+  const DATA_KEY = `resume_data_${tenant}`;
+
+  const [step, setStep] = useState("loading");
   const [resumeData, setResumeData] = useState(null);
+  const [resumeId, setResumeId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
 
-  // Called when JobInputForm successfully gets data from backend
-  const handleGenerationSuccess = (aiData) => {
-    // aiData is the JSON structure you showed me
-    setResumeData(aiData);
-    setStep("editor");
-  };
+  // 1. INITIAL LOAD
+  useEffect(() => {
+    if (!tenant) return;
 
-  // Called when user clicks "Save" inside the editor
+    const initializeData = async () => {
+      let currentId = null;
+
+      // A. Check Local Storage for ID
+      if (typeof window !== "undefined") {
+        currentId = localStorage.getItem(ID_KEY);
+        const localContent = localStorage.getItem(DATA_KEY);
+        
+        // Optimistic Load: If we have content, show it immediately
+        if (localContent) {
+           try {
+             console.log("Loading Optimistic Data from LS:", localContent?.slice(0, 100) + "...");
+             setResumeData(JSON.parse(localContent));
+             setStep("editor");
+           } catch(e) { console.error("Error parsing optimistic data:", e); }
+        } else {
+             console.log("No Optimistic Data found in LS");
+        }
+      }
+
+      // If no ID, go back to input
+      if (!currentId) {
+        setStep("input");
+        return;
+      }
+
+      setResumeId(currentId);
+
+      // B. Fetch Latest from Server using the ID
+      // Endpoint: GET /resume/resume/{resume_id}/
+      try {
+        const res = await fetch(`/api/resume/resume/${currentId}/?tenant=${tenant}`);
+        
+        if (res.ok) {
+          const serverData = await res.json();
+          // Assuming server returns { id: 123, tailored_content: {...} }
+          // Adjust 'tailored_content' based on your actual API response structure
+          const content = serverData.tailored_content || serverData; 
+          
+          setResumeData(content);
+          // Sync local storage
+          localStorage.setItem(DATA_KEY, JSON.stringify(content));
+          setStep("editor");
+        } else {
+            console.error("Failed to fetch resume from server");
+            // Optionally handle 404 (resume deleted) by clearing local storage
+            if (res.status === 404) {
+                localStorage.removeItem(ID_KEY);
+                setStep("input");
+            }
+        }
+      } catch (error) {
+        console.error("Error fetching initial data", error);
+      }
+    };
+
+    initializeData();
+  }, [tenant]);
+
+  // 2. AUTO-SAVE LOCAL
+  const handleDataChange = useCallback((newData) => {
+    setResumeData(newData);
+    localStorage.setItem(DATA_KEY, JSON.stringify(newData));
+    setLastSaved(new Date());
+  }, [DATA_KEY]);
+
+  // 3. SERVER SAVE
   const handleSave = async (currentData) => {
+    if (!resumeId) return;
     setIsSaving(true);
+    
+    // Optimistic Local Save
+    localStorage.setItem(DATA_KEY, JSON.stringify(currentData));
+
     try {
-      const res = await fetch("/api/resume/update", {
+      // Endpoint: PUT /resume/update/
+      // Since URL doesn't have ID, we MUST pass it in the body
+      const res = await fetch(`/api/resume/update/?tenant=${tenant}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tailored_content: currentData, // Matches your backend serializer
-          template_style: "MODERN", // You might want to pass settings.template here
+          resume_id: resumeId, // Include ID here
+          tailored_content: currentData,
+          template_style: "MODERN",
         }),
       });
 
       if (res.ok) {
-        alert("Resume saved successfully!");
+        console.log("✅ Saved to server");
       } else {
-        alert("Failed to save.");
+        const err = await res.json();
+        alert(`Save failed: ${err.detail || "Unknown error"}`);
       }
     } catch (e) {
       console.error(e);
-      alert("Error saving resume.");
+      alert("Network error. Data saved locally only.");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleReset = () => {
+    if(confirm("Start a new resume? This will clear your current editor session.")) {
+      localStorage.removeItem(ID_KEY);
+      localStorage.removeItem(DATA_KEY);
+      setResumeData(null);
+      setStep("input");
+    }
+  }
+
+  if (step === "loading") {
+    return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-blue-600"/></div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header for Editor Mode */}
       {step === "editor" && (
-        <div className="bg-white border-b px-6 py-3 flex justify-between items-center sticky top-0 z-50">
-          <Button
-            variant="ghost"
-            onClick={() => setStep("input")}
-            className="text-gray-600"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" /> New Analysis
-          </Button>
+        <div className="bg-white border-b px-6 py-3 flex justify-between items-center sticky top-0 z-50 shadow-sm print:hidden">
+          <div className="flex items-center gap-4">
+             <Button variant="ghost" onClick={handleReset} className="text-gray-600 hover:text-red-600 hover:bg-red-50">
+                <ArrowLeft className="mr-2 h-4 w-4" /> New Resume
+             </Button>
+             {lastSaved && (
+                 <span className="text-xs text-green-600 flex items-center gap-1 animate-pulse">
+                    <CheckCircle2 size={12} /> Saved locally
+                 </span>
+             )}
+          </div>
+          
           <div className="font-semibold text-gray-800">Resume Editor</div>
-          <Button onClick={() => handleSave(resumeData)} disabled={isSaving}>
+          
+          <Button 
+            onClick={() => handleSave(resumeData)} 
+            disabled={isSaving}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? "Syncing..." : "Save to Cloud"}
           </Button>
         </div>
       )}
 
       <div className="w-full">
         {step === "input" ? (
-          <JobInputForm
-            onGenerateSuccess={handleGenerationSuccess}
-            tenant={tenant}
-          />
+          <JobInputForm tenant={tenant} />
         ) : (
-          /* Render the Builder with the AI Data */
           <ResumeBuilder
-            initialData={resumeDefaultData} //........................................change this
-            // Important: We pass a key to force re-render if data changes
-            key={JSON.stringify(resumeData)}
-            // Optional: Pass handleSave down if you want the save button INSIDE the builder
-            onSaveExternal={handleSave}
+            initialData={resumeData || resumeDefaultData}
+            key={`builder-${resumeId}`} // Re-mount if ID changes
+            onSaveExternal={handleSave} 
+            onDataChange={handleDataChange} 
           />
         )}
       </div>

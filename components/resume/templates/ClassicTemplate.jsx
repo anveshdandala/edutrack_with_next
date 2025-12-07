@@ -338,7 +338,7 @@ const ClassicTemplate = ({
                           />
                           {/* Separator simulation */}
                           {sIdx < skillGroup.skills.length - 1 && (
-                            <span className="text-gray-400 mr-1">•</span>
+                            <span className="text-gray-400 mr-1"></span>
                           )}
 
                           <button

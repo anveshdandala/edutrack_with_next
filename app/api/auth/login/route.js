@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 const raw =
   process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE ||
   "http://127.0.0.1:8000";
 if (!/^https?:\/\/[^\/]+/.test(raw) && !raw.startsWith("http://127.0.0.1")) {
   console.error("Invalid BACKEND URL env var:", raw);

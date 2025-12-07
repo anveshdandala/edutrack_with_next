@@ -1,33 +1,43 @@
 // middleware.js
 import { NextResponse } from "next/server";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
+
+// Helper to check if JWT is expired
+function isTokenExpired(token) {
+  if (!token) return true;
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return true;
+    const decoded = JSON.parse(atob(payload));
+    if (!decoded.exp) return false;
+    // Buffer of 10s to be safe
+    return decoded.exp * 1000 < Date.now() + 10000; 
+  } catch (e) {
+    return true;
+  }
+}
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // 1. Extract Tenant from URL (Assuming structure: /:tenant/...)
-  // path usually looks like: /vmeg/student/dashboard
   const pathParts = pathname.split("/");
-  const tenant = pathParts[1]; // "vmeg"
+  const tenant = pathParts[1];
 
-  // 2. Get Tokens (Make sure names match your Login Route!)
-  // Your login route set 'refreshtoken' (lowercase), so we must look for that.
   const accessToken = request.cookies.get("accesstoken")?.value;
   const refreshToken = request.cookies.get("refreshtoken")?.value;
 
-  // 3. Scenario A: We have a valid Access Token
-  // Just let them pass.
-  if (accessToken) {
+  // 1. Check if we have a VALID access token
+  if (accessToken && !isTokenExpired(accessToken)) {
     return NextResponse.next();
   }
 
-  // 4. Scenario B: Access Expired, but we have Refresh Token
-  if (!accessToken && refreshToken && tenant) {
+  // 2. If no valid access token, but we have refresh token -> Refresh
+  if ((!accessToken || isTokenExpired(accessToken)) && refreshToken && tenant) {
     console.log(`[Middleware] Access expired for ${tenant}. Refreshing...`);
 
     try {
-      // Call the Tenant-Specific Refresh Endpoint
+
       const refreshUrl = `${API_BASE}/api/${tenant}/auth/jwt/refresh/`;
 
       const res = await fetch(refreshUrl, {
@@ -41,20 +51,14 @@ export async function middleware(request) {
         const newAccess = data.access;
 
         console.log("[Middleware] Refresh successful!");
-
-        // CRITICAL STRATEGY: "Refresh & Reload"
-        // We redirect the user to the *exact same URL* they were trying to visit.
-        // Why? This forces the browser to send a NEW request with the NEW cookie.
-        // If we just used .next(), the Layout might still see the old (missing) cookie.
         const response = NextResponse.redirect(request.url);
 
-        // Set the new Access Token on this redirect response
         response.cookies.set("accesstoken", newAccess, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
           path: "/",
-          maxAge: 60 * 60 * 24, // 1 Day (Align this with your Django settings)
+          maxAge: 60 * 60, // 1 hour
         });
 
         return response;
@@ -62,15 +66,12 @@ export async function middleware(request) {
         console.error(
           "[Middleware] Refresh failed (401/400). Token likely invalid."
         );
-        // If refresh fails, let code fall through to the Logout logic below
       }
     } catch (error) {
       console.error("[Middleware] Network error during refresh", error);
     }
   }
 
-  // 5. Scenario C: No Tokens (Logged Out or Session Completely Dead)
-  // Check if they are trying to access a protected page
   const isProtected =
     pathname.includes("/institution") ||
     pathname.includes("/student") ||
@@ -78,14 +79,12 @@ export async function middleware(request) {
     pathname.includes("/faculty");
 
   if (isProtected) {
-    // Redirect to the global login or tenant login
     return NextResponse.redirect(new URL("/globalLogin", request.url));
   }
 
   return NextResponse.next();
 }
 
-// Only run on routes that actually need auth checking
 export const config = {
   matcher: [
     /*
