@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useParams, usePathname } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,6 +93,14 @@ const internshipsEvents = [
 ];
 
 export default function FacultyDashboard() {
+  const params = useParams();
+  const pathname = usePathname();
+  
+  // Robustly resolve tenant: try params first, then fallback to pathname parsing
+  const tenant = params?.tenant || pathname?.split("/")[1];
+
+  console.log("FacultyDashboard debug:", { params, pathname, resolvedTenant: tenant });
+
   const [recommendations, setRecommendations] = useState({});
 
   const handleRecommendation = (id, action) => {
@@ -129,7 +138,7 @@ export default function FacultyDashboard() {
                 {assignedStudents.map((student) => (
                   <Link
                     key={student.id}
-                    href={"/faculty/analysis"}
+                    href={`/${tenant}/faculty/analysis`}
                     className="block"
                   >
                     <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
@@ -198,7 +207,7 @@ export default function FacultyDashboard() {
                   Add New College Tech Event
                 </Button>
                 <Button asChild size="sm">
-                  <Link href="/faculty/internships">
+                  <Link href={`/${tenant}/faculty/internships`}>
                     View All <ExternalLink className="w-4 h-4 ml-1" />
                   </Link>
                 </Button>

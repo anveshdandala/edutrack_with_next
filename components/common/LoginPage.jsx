@@ -13,7 +13,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/components/AuthProvider";
-import Cookies from "js-cookie";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InputField from "@/components/common/InputField";
 import CustomButton from "@/components/common/CustomButton";
@@ -40,6 +39,28 @@ export default function LoginPage({ tenantMeta }) {
       tenantMeta?.schema_name ||
       (typeof window !== "undefined" && window.location.pathname.split("/")[1]);
     console.log("submitted with tenant:", tenant);
+
+    if (activeRole === "recruiter") {
+      // Mock login for recruiter
+      await new Promise((resolve) => setTimeout(resolve, 800)); // fake delay
+
+      // Sample data
+      const mockRecruiter = {
+        id: "rec-mock-001",
+        username: formData.username,
+        role: "RECRUITER",
+        name: "Mock Recruiter",
+        email: "recruiter@example.com",
+      };
+
+      console.log("Mock Recruiter Login:", mockRecruiter);
+      if (setUser) setUser(mockRecruiter);
+
+      // Redirect to recruiter dashboard
+      router.push(`/${tenant}/rec`);
+      return;
+    }
+
     try {
       // 1) authenticate (backend ideally sets HttpOnly cookies)
       await login(formData.username, formData.password, tenant);
@@ -146,10 +167,11 @@ export default function LoginPage({ tenantMeta }) {
                 onValueChange={setActiveRole}
                 className="w-full mb-6"
               >
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="student">Student</TabsTrigger>
                   <TabsTrigger value="faculty">Faculty</TabsTrigger>
-                  <TabsTrigger value="institution">Institution</TabsTrigger>
+                  <TabsTrigger value="institution">Inst.</TabsTrigger>
+                  <TabsTrigger value="recruiter">Recruiter</TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -161,6 +183,8 @@ export default function LoginPage({ tenantMeta }) {
                       ? "Enter your student username"
                       : activeRole === "faculty"
                       ? "Enter your faculty username"
+                      : activeRole === "recruiter"
+                      ? "Enter recruiter username"
                       : "Enter institution username"
                   }
                   value={formData.username}

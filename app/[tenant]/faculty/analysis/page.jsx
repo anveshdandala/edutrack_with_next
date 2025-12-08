@@ -1,5 +1,5 @@
 "use client"; // Add this for Recharts and other client-side components
-
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import {
   CartesianGrid,
   Bar,
 } from "recharts";
+import { useEffect } from "react";
 
 // --- MOCK DATA ---
 // In a real app, you would fetch this data based on the studentId
@@ -79,6 +80,11 @@ const studentData = {
 // --- END MOCK DATA ---
 
 export default function StudentAnalysis() {
+  const params = useParams();
+  const tenant = params.tenant;
+  useEffect(()=>{
+    console.log("[analysis] tenant",tenant);
+  })
   return (
     <div className="min-h-screen bg-background">
       <Navbar showAuthButtons={false} />

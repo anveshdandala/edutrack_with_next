@@ -137,7 +137,7 @@ export default function StudentProfileClient({ user: serverUser }) {
               animate={{ opacity: 1, y: 0 }}
             >
               <Card className="overflow-hidden border-border/50 shadow-sm">
-                <div className="h-32 bg-gradient-to-r from-blue-600 to-purple-600 relative">
+                <div className="h-40 bg-gradient-to-r from-blue-600 to-purple-600 relative">
                   {/* Edit Cover Button (Visual only) */}
                   <Button
                     size="sm"
@@ -157,10 +157,10 @@ export default function StudentProfileClient({ user: serverUser }) {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-1 mt-2 sm:mt-0">
-                      <h1 className="text-2xl font-bold">
+                      <h1 className="text-3xl font-bold">
                         {personalDetails.firstName} {personalDetails.lastName}
                       </h1>
-                      <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap gap-2 text-base text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Building className="h-3 w-3" />{" "}
                           {personalDetails.department}
@@ -226,8 +226,8 @@ export default function StudentProfileClient({ user: serverUser }) {
                 <CardContent className="space-y-8">
                   {/* Basic Info Group */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      <User className="h-4 w-4" /> Basic Information
+                    <h3 className="text-base font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                      <User className="h-5 w-5" /> Basic Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
@@ -329,10 +329,10 @@ export default function StudentProfileClient({ user: serverUser }) {
 
                   {/* Academic Info Group */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4" /> Academic Details
+                    <h3 className="text-base font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5" /> Academic Details
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/30 p-4 rounded-lg border border-border/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-lg border border-border/50">
                       <div className="space-y-2">
                         <Label className="text-muted-foreground">
                           Roll Number
@@ -364,8 +364,8 @@ export default function StudentProfileClient({ user: serverUser }) {
 
                   {/* Address Info Group */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                      <MapPin className="h-4 w-4" /> Location
+                    <h3 className="text-base font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                      <MapPin className="h-5 w-5" /> Location
                     </h3>
                     <div className="grid grid-cols-1 gap-6">
                       <div className="space-y-2">
@@ -456,8 +456,8 @@ export default function StudentProfileClient({ user: serverUser }) {
             >
               <Card className="overflow-hidden border-border/50 shadow-sm">
                 <CardHeader className="bg-gradient-to-br from-slate-900 to-slate-800 text-white pb-8">
-                  <CardTitle className="text-lg">Activity Score</CardTitle>
-                  <CardDescription className="text-slate-300">
+                  <CardTitle className="text-xl">Activity Score</CardTitle>
+                  <CardDescription className="text-slate-300 text-sm">
                     Your engagement metrics
                   </CardDescription>
                 </CardHeader>
