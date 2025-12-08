@@ -32,12 +32,12 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link href="/auth/login">
+              <Link href="/globalLogin">
                 <CustomButton size="lg" className="text-lg px-8">
                   user Login
                 </CustomButton>
               </Link>
-              <Link href="/auth/signup">
+              <Link href="/signup">
                 <CustomButton
                   variant="outline"
                   size="lg"

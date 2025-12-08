@@ -1,52 +1,47 @@
-// app/api/auth/me/route.js
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-const API_BASE =
-  process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE ||
-  "http://127.0.0.1:8000";
+const API_BASE = process.env.API_URL || "http://127.0.0.1:8000";
 
 export async function GET(request) {
-  // 1. Get the tenant from query params (e.g. ?tenant=vmeg)
-  const { searchParams } = new URL(request.url);
-  const tenant = searchParams.get("tenant");
-
-  if (!tenant) {
-    return NextResponse.json({ error: "Tenant required" }, { status: 400 });
-  }
-
-  // 2. Access the HttpOnly cookie (Allowed here on Server)
   const cookieStore = await cookies();
   const token = cookieStore.get("accesstoken")?.value;
 
   if (!token) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 3. Call Django on behalf of the user
-  const target = `${API_BASE}/api/${tenant}/auth/users/me/`;
+  // Get tenant from query param to build the URL
+  const { searchParams } = new URL(request.url);
+  const tenant = searchParams.get("tenant");
+
+  if (!tenant) {
+    return NextResponse.json({ error: "Tenant ID required" }, { status: 400 });
+  }
 
   try {
-    const res = await fetch(target, {
-      method: "GET",
+    const cleanBase = API_BASE.replace(/\/$/, "");
+    const url = `${cleanBase}/api/${tenant}/auth/users/me/`;
+
+    const res = await fetch(url, {
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       cache: "no-store",
     });
 
-    const data = await res.json();
-    console.log("[auth me healper] res", data);
-
     if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
+      return NextResponse.json(
+        { error: "Failed to fetch user" },
+        { status: res.status }
+      );
     }
 
-    // 4. Return the user data to the client
-    return NextResponse.json(data, { status: 200 });
+    const user = await res.json();
+    return NextResponse.json(user, { status: 200 });
+
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

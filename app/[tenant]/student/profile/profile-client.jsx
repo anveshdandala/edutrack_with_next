@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/student/dashboard-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,11 +26,13 @@ import {
   Mail,
   Phone,
   Calendar,
+  ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function StudentProfileClient({ user: serverUser }) {
+  const router = useRouter();
   // --- STATE MANAGEMENT ---
   const initialDetails = {
     firstName: "",
@@ -113,6 +116,14 @@ export default function StudentProfileClient({ user: serverUser }) {
       <DashboardHeader user={serverUser} />
 
       <main className="container mx-auto px-4 max-w-6xl mt-6">
+        <Button
+          onClick={() => router.back()}
+          variant="ghost" 
+          className="mb-4 pl-0 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
+        </Button>
+
         {/* Success Toast / Alert */}
         <AnimatePresence>
           {showSuccess && (

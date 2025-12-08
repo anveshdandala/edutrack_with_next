@@ -2,25 +2,44 @@ import { serverFetch } from "@/lib/server-api";
 
 export default async function HodsList({ tenant }) {
   let hods = [];
+  let hasError = false; // Add a flag
+
   try {
-    const data = await serverFetch("/administration/list-hods", {
+    const data = await serverFetch("/administration/list-hods/", {
       tenant,
       cache: "no-store",
     });
 
-    // FIX: Use data?.results instead of data.results
-    // If data is null, this evaluates to undefined || [], which is []
-    hods = Array.isArray(data) ? data : data?.results || [];
+    if (data === null) {
+      hasError = true; // Mark as error
+    } else {
+      hods = Array.isArray(data) ? data : data?.results || [];
+    }
   } catch (e) {
     console.error("Failed to get HODS:", e);
+    hasError = true;
   }
 
-  // Handle empty state gracefully
+  // 1. Handle Error State Explicitly
+  if (hasError) {
+    return (
+      <div className="text-center py-20 bg-red-50 rounded-lg border border-red-200 border-dashed">
+        <p className="text-red-600 font-medium">
+          System Error: Unable to load HODs.
+        </p>
+        <p className="text-xs text-red-500 mt-1">
+            Check server logs for [Fetch Error]
+        </p>
+      </div>
+    );
+  }
+
+  // 2. Handle Empty State
   if (hods.length === 0) {
     return (
       <div className="text-center py-20 bg-muted/20 rounded-lg border border-dashed">
         <p className="text-muted-foreground">
-          No HODs found or failed to load.
+          No HODs found in database.
         </p>
       </div>
     );

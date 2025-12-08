@@ -1,87 +1,83 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-const raw =
-  process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE ||
-  "http://127.0.0.1:8000";
-if (!/^https?:\/\/[^\/]+/.test(raw) && !raw.startsWith("http://127.0.0.1")) {
-  console.error("Invalid BACKEND URL env var:", raw);
-}
-const BACKEND_URL = raw.replace(/\/$/, ""); // remove trailing slash if any
+
+// Fallback to localhost if env var is missing
+const API_BASE = process.env.API_URL || "http://127.0.0.1:8000";
 
 export async function POST(request) {
   try {
     const body = await request.json();
     const { username, password, tenant } = body;
 
-    console.log("👉 Login Route: Attempting login for", username);
-    console.log("👉 Using BACKEND_URL:", BACKEND_URL);
-    console.log("tenant in route.js:", tenant);
+    // 1. Validate Input
+    if (!username || !password || !tenant) {
+      return NextResponse.json(
+        { error: "Missing credentials or tenant ID" },
+        { status: 400 }
+      );
+    }
 
-    const target = `${BACKEND_URL}/api/${tenant}/auth/jwt/create/`;
-    console.log("👉 Target endpoint:", target);
+    // 2. Prepare Django URL (Ensure strict trailing slash)
+    const cleanBase = API_BASE.replace(/\/$/, "");
+    const targetUrl = `${cleanBase}/api/${tenant}/auth/jwt/create/`;
 
-    const res = await fetch(target, {
+    console.log(`[Proxy] Attempting login at: ${targetUrl}`);
+
+    // 3. Call Django Backend
+    const res = await fetch(targetUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // "Host": `${tenant}.localhost`, // Uncomment if using subdomain routing locally
+      },
       body: JSON.stringify({ username, password }),
       cache: "no-store",
     });
 
-    const responseText = await res.text();
-    console.log(`👉 Django raw response (status ${res.status}):`, responseText);
+    const data = await res.json();
 
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (err) {
-      console.log("👉 Response was not JSON");
+    if (!res.ok) {
+      console.error(`[Proxy] Login Failed (${res.status}):`, data);
+      // Forward the specific error from Django
       return NextResponse.json(
-        {
-          error: "Upstream server returned non-JSON response",
-          raw: responseText,
-        },
-        { status: 502 }
+        { error: data.detail || "Invalid credentials" },
+        { status: res.status }
       );
     }
 
-    if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
-    }
-
+    // 4. Set HttpOnly Cookies
     const { access, refresh } = data;
-
-    // Build the response and set cookies on it
+    
     const nextRes = NextResponse.json(
-      { success: true, user: data },
+      { success: true, user: data.user }, // Don't send tokens in body
       { status: 200 }
     );
 
-    const secure = process.env.NODE_ENV === "production";
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieDefaults = {
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+      secure: isProduction,
+    };
 
-    // Use nextRes.cookies.set(...) to set cookies correctly
-    nextRes.cookies.set({
-      name: "accesstoken",
-      value: access,
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      secure,
+    // Set Access Token (e.g., 30 mins - match your Django settings)
+    nextRes.cookies.set("accesstoken", access, {
+      ...cookieDefaults,
+      maxAge: 60 * 30, 
     });
-    nextRes.cookies.set({
-      name: "refreshtoken",
-      value: refresh,
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      secure,
+
+    // Set Refresh Token (e.g., 7 days)
+    nextRes.cookies.set("refreshtoken", refresh, {
+      ...cookieDefaults,
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return nextRes;
+
   } catch (error) {
-    console.error("Login Route Critical Error:", error);
+    console.error("[Proxy] Critical Error:", error);
     return NextResponse.json(
-      { error: error?.message || String(error) },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

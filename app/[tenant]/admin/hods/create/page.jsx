@@ -39,7 +39,7 @@ export default function CreateHodPage() {
 
     try {
       // FIX 1: Pass tenant in the URL query string
-      const res = await fetch(`/api/admin/create-hod?tenant=${tenant}`, {
+      const res = await fetch(`/api/admin/hod/create?tenant=${tenant}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Ensure department_id is sent as a number if possible, though JSON is typically forgiving
@@ -138,30 +138,15 @@ export default function CreateHodPage() {
                 required
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Department</label>
-            <Select
-              value={form.department_id}
-              onValueChange={(value) => setField("department_id", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent>
-                {/* NOTE: In a real app, you should fetch these departments from your API.
-                  For now, assuming IDs are 1, 2, 3, 4. 
-                */}
-                <SelectItem value="1">Computer Science (ID: 1)</SelectItem>
-                <SelectItem value="2">Electronics (ID: 2)</SelectItem>
-                <SelectItem value="3">Mechanical (ID: 3)</SelectItem>
-                <SelectItem value="4">FD (ID: 4)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-1">
-              * Select values currently hardcoded to IDs 1-4
-            </p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Department</label>
+              <Input
+                type="department"
+                value={form.department_id}
+                onChange={(e) => setField("department_id", e.target.value)}
+                required
+              />
+            </div>
           </div>
 
           {error && (

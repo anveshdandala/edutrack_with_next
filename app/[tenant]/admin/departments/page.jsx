@@ -51,7 +51,7 @@ export default function DepartmentManager() {
 
     try {
       // 1. Pass tenant in the URL Query String
-      const response = await fetch(`/api/departments/create?tenant=${tenant}`, {
+      const response = await fetch(`/api/admin/departments/create?tenant=${tenant}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,254 +1,126 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Upload,
-  FileText,
-  Award,
-  Briefcase,
-  GraduationCap,
-  Users,
-  Activity,
-  Eye,
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { UploadCloud, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const certificateTypes = [
-  { id: "seminars", title: "Seminars", icon: Users },
-  { id: "conferences", title: "Conferences", icon: Award },
-  { id: "moocs", title: "MOOCs", icon: GraduationCap },
-  { id: "internships", title: "Internships", icon: Briefcase },
-  { id: "extracurricular", title: "Extra-curriculars", icon: FileText },
-];
-
-export default function CertificateClientWrapper({
-  user,
-  initialCertificates,
-}) {
+export default function CertificateClientWrapper({ tenant }) {
   const router = useRouter();
-  const params = useParams();
+  const [file, setFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [status, setStatus] = useState(null); // 'success' | 'error' | null
+  const [message, setMessage] = useState("");
 
-  // 1. Get Tenant from URL params
-  const tenant = params.tenant;
-
-  // State
-  const scrollRef = useRef(null);
-  const [certificates, setCertificates] = useState(initialCertificates);
-  const [selectedType, setSelectedType] = useState("seminars");
-  const [verificationLink, setVerificationLink] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // 2. Auth Protection (Client Side Guard)
-  useEffect(() => {
-    // FIX: Redirect to the TENANT SPECIFIC login page, not global /auth/login
-    if (!user) {
-      router.push(`/${tenant}/auth/login`);
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setStatus(null); // Reset status on new file
     }
-  }, [user, router, tenant]);
-
-  // Logic Handlers
-  const handleAddCertificate = async () => {
-    if (!verificationLink.trim()) return;
-    setIsSubmitting(true);
-
-    // Simulate API Call
-    setTimeout(() => {
-      const newCert = {
-        id: Date.now(),
-        type: selectedType,
-        name: "New Verified Certificate",
-        link: verificationLink,
-        date: new Date().toISOString().split("T")[0],
-        issuer: "Pending Issuer",
-      };
-      setCertificates([newCert, ...certificates]);
-      setIsSubmitting(false);
-      setVerificationLink("");
-    }, 1500);
   };
 
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = 400;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!file) return;
+
+    setIsUploading(true);
+    setStatus(null);
+
+    // 1. Create FormData
+    const formData = new FormData();
+    // CRITICAL: The backend expects 'file_url' based on your schema
+    formData.append("file_url", file); 
+
+    try {
+      // 2. Send to Next.js Proxy (NOT directly to Django, because we need Cookies)
+      const res = await fetch(`/api/upload-certificate?tenant=${tenant}`, {
+        method: "POST",
+        body: formData, // fetch automatically sets Content-Type to multipart/form-data
       });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Upload failed");
+      }
+
+      const data = await res.json();
+      console.log("Upload Success:", data);
+      
+      setStatus("success");
+      setMessage("Certificate uploaded successfully!");
+      setFile(null); // Clear input
+      
+      // Optional: Refresh page to show new list if you have one
+      router.refresh(); 
+
+    } catch (error) {
+      console.error("Upload Error:", error);
+      setStatus("error");
+      setMessage(error.message || "Failed to upload certificate.");
+    } finally {
+      setIsUploading(false);
     }
   };
-
-  // If no user yet, don't render the sensitive UI (prevents flash)
-  if (!user) return null;
 
   return (
-    <>
-      {/* Navigation & Actions Toolbar */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="flex-1">
-          <div className="flex items-center justify-end">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg">
-                <Activity className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Activity Score:</span>
-                <span className="text-lg font-bold text-primary">85</span>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  router.push(
-                    `/${tenant}/student/portfolio/professional-portfolio`
-                  )
-                }
-              >
-                portfolio
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  router.push(`/${tenant}/student/portfolio/personal-portfolio`)
-                }
-              >
-                personal Report
-              </Button>
-              <Button
-                // FIX: Ensure absolute path with leading slash
-                onClick={() => router.push(`/${tenant}/student/resume`)}
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Resume
-              </Button>
-            </div>
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>Upload New Certificate</CardTitle>
+        <CardDescription>
+          Supported formats: PDF, JPG, PNG. Max size: 5MB.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        
+        {/* Status Alerts */}
+        {status === "success" && (
+          <Alert className="bg-green-50 text-green-800 border-green-200">
+            <CheckCircle className="h-4 w-4" />
+            <AlertTitle>Success</AlertTitle>
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        )}
+        
+        {status === "error" && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Upload Form */}
+        <form onSubmit={handleUpload} className="space-y-4">
+          <div className="grid w-full items-center gap-1.5">
+            <Input 
+              id="cert-file" 
+              type="file" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={handleFileChange}
+              disabled={isUploading}
+            />
           </div>
-        </div>
-      </div>
 
-      {/* Input Form Card */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Add New Certificate</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Certificate Type</label>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="px-3 py-2 border border-input rounded-md bg-background text-sm"
-                >
-                  {certificateTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <label className="text-sm font-medium">Verification Link</label>
-                <input
-                  type="url"
-                  placeholder="Enter certificate verification link"
-                  value={verificationLink}
-                  onChange={(e) => setVerificationLink(e.target.value)}
-                  className="px-3 py-2 border border-input rounded-md bg-background text-sm"
-                />
-              </div>
-            </div>
-
-            <Button
-              onClick={handleAddCertificate}
-              disabled={isSubmitting || !verificationLink.trim()}
-              className="w-full md:w-auto"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              {isSubmitting ? "Verifying..." : "Add Certificate"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Carousel Section */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Verified Certificates</h2>
-        <div className="relative group">
-          <button
-            onClick={() => scroll("left")}
-            className="absolute -left-5 lg:-left-12 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 p-2 rounded-full shadow-md"
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={!file || isUploading}
           >
-            <ChevronLeft className="h-6 w-6 text-primary" />
-          </button>
-
-          <div
-            ref={scrollRef}
-            className="flex gap-4 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory scrollbar-hide"
-          >
-            {certificates.length > 0 ? (
-              certificates.map((cert) => (
-                <Card
-                  key={cert.id}
-                  className="flex-shrink-0 w-80 snap-center hover:shadow-lg transition-shadow"
-                >
-                  <CardHeader>
-                    <CardTitle className="text-base line-clamp-2">
-                      {cert.name}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      {cert.issuer}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Badge
-                      variant="outline"
-                      className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                    >
-                      ✓ Verified
-                    </Badge>
-                    <div className="text-xs space-y-2">
-                      <p>
-                        <span className="font-medium">Type:</span>{" "}
-                        {
-                          certificateTypes.find((t) => t.id === cert.type)
-                            ?.title
-                        }
-                      </p>
-                      <p>
-                        <span className="font-medium">Date:</span> {cert.date}
-                      </p>
-                      <a
-                        href={cert.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline block truncate"
-                      >
-                        View Certificate →
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+              </>
             ) : (
-              <div className="flex items-center justify-center w-full h-40 text-muted-foreground border-2 border-dashed rounded-lg">
-                <p>No verified certificates yet. Add one to get started!</p>
-              </div>
+              <>
+                <UploadCloud className="mr-2 h-4 w-4" /> Upload Certificate
+              </>
             )}
-          </div>
-
-          <button
-            onClick={() => scroll("right")}
-            className="absolute -right-5 lg:-right-12 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 p-2 rounded-full shadow-md"
-          >
-            <ChevronRight className="h-6 w-6 text-primary" />
-          </button>
-        </div>
-      </div>
-    </>
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

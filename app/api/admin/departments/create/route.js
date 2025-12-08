@@ -29,9 +29,9 @@ export async function POST(request) {
     // 3. Construct Django URL
     // Assumption: Your Django URL is mapped to /api/<tenant>/administration/create-hod/
     // Please verify this path matches your Django urls.py
-    const targetUrl = `${API_BASE}/api/${tenant}/administration/create-hod/`;
+    const targetUrl = `${API_BASE}/api/${tenant}/administration/create-department/`;
 
-    console.log(`[NextAPI] Creating HOD at: ${targetUrl}`);
+    console.log(`[NextAPI] Creating Department at: ${targetUrl}`);
     console.log(`[NextAPI] Payload:`, body);
 
     const res = await fetch(targetUrl, {

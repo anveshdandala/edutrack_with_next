@@ -8,11 +8,16 @@ import {
 import { DashboardHeader } from "@/components/student/dashboard-header";
 import { ChatInterface } from "@/components/student/chat-interface";
 import { MOCK_STUDENT_PROFILE } from "@/components/student/constants";
+import { useEffect } from "react";
 
-export default function StudentDashboardUI({ user }) {
+export default function StudentDashboardUI({ user  }) {
   const router = useRouter();
   const params = useParams();
   const tenant = params.tenant;
+
+  useEffect((data)=>{
+    console.log("[dashboard] data",data);
+  })
   
   const userName = user?.username || "Alex Chen";
   const userEmail = user?.email || "alex.chen@student.edu";
@@ -44,7 +49,10 @@ export default function StudentDashboardUI({ user }) {
         <aside className="lg:col-span-3 h-full overflow-y-auto border-r border-gray-200 bg-white p-6 flex flex-col gap-6 custom-scrollbar z-10">
             
             {/* 1. Profile Card */}
-            <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 text-center relative overflow-hidden group">
+            <div 
+              onClick={() => onNavigate('edit-profile')}
+              className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 text-center relative overflow-hidden group cursor-pointer hover:shadow-md transition-all"
+            >
                 <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
                 <div className="relative mt-8 mb-4">
                     <div className="w-24 h-24 bg-white p-1 rounded-full mx-auto shadow-lg">
@@ -70,13 +78,6 @@ export default function StudentDashboardUI({ user }) {
                         <span className="font-medium text-gray-700 truncate block">{userEmail}</span>
                     </div>
                 </div>
-
-                <button 
-                  onClick={() => onNavigate('edit-profile')}
-                  className="w-full py-2.5 bg-white border border-gray-200 hover:border-blue-300 hover:text-blue-600 text-gray-600 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                    <Edit size={14} /> Edit Profile
-                </button>
             </div>
 
             {/* 2. Activity Score */}
@@ -408,7 +409,7 @@ export default function StudentDashboardUI({ user }) {
 
        {/* Floating Chat Interface */}
        <div className="fixed bottom-6 right-6 z-50 w-80 md:w-96">
-          <ChatInterface studentProfile={MOCK_STUDENT_PROFILE} />
+          <ChatInterface studentProfile={activeChatProfile} />
        </div>
     </div>
   );

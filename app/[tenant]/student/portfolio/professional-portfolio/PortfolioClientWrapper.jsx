@@ -15,7 +15,7 @@ export default function PortfolioClientWrapper({ user }) {
   const authUser = user; //it has { id: 0,  email: "user@example.com",username: "string",first_name: "string",last_name: "string",role: "ADMIN",profile_picture: "string",profile:"string"}
   const onBack = () => {
     // Navigate back to student dashboard
-    router.push(`/${params.tenant}/student/dashboard`);
+    router.push(`/${params.tenant}/student`);
   };
 
   const handleCopyLink = () => {
