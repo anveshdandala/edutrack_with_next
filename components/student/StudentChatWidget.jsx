@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ChatInterface from "@/components/student/ChatInterface"; // Update path if needed
+import { ChatInterface } from "@/components/student/chat-interface"; // Update path if needed
 
 // Default fallback in case no resume exists yet
 const DEFAULT_PROFILE = {
@@ -20,8 +20,8 @@ export default function StudentChatWidget({ tenant }) {
       try {
         // 1. Get the ID from LocalStorage (Saved during generation)
         // Using the same key pattern you used in JobInputForm
-        const currentId = typeof window !== "undefined" 
-          ? localStorage.getItem(`current_resume_id_${tenant}`) 
+        const currentId = typeof window !== "undefined"
+          ? localStorage.getItem(`current_resume_id_${tenant}`)
           : null;
 
         if (!currentId) {
@@ -36,10 +36,10 @@ export default function StudentChatWidget({ tenant }) {
 
         if (res.ok) {
           const serverData = await res.json();
-          
+
           // 3. Extract tailored content (The logic you provided)
           const content = serverData.tailored_content || serverData;
-          
+
           console.log("ChatBot Context Loaded:", content);
           setResumeData(content);
         } else {
@@ -58,15 +58,15 @@ export default function StudentChatWidget({ tenant }) {
   }, [tenant]);
 
   // Optional: Don't show chat until we know context, or show with default
-  if (loading) return null; 
+  if (loading) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-80 md:w-96">
       {/* We pass the fetched resume data as the 'studentProfile' 
           The ChatInterface internally needs to handle this structure 
       */}
-      <ChatInterface 
-        studentProfile={resumeData || DEFAULT_PROFILE} 
+      <ChatInterface
+        studentProfile={resumeData || DEFAULT_PROFILE}
         tenant={tenant}
       />
     </div>
