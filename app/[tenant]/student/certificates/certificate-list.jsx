@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
   AlertCircle, FileText, ExternalLink, CheckCircle2, 
-  Clock, ShieldAlert, Award, Download, Search, Filter, X 
+  Clock, ShieldAlert, Award, Download, Search, Filter, X, Sparkles, UserCheck 
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ export default function CertificateList({ tenant }) {
 
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL, VERIFIED, PENDING
+  const [statusFilter, setStatusFilter] = useState("ALL"); 
 
   useEffect(() => {
     async function fetchCertificates() {
@@ -41,6 +41,59 @@ export default function CertificateList({ tenant }) {
     if (tenant) fetchCertificates();
   }, [tenant]);
 
+  // --- Styles Helper ---
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case "MANUAL_VERIFIED":
+        return { 
+          borderColor: "border-l-emerald-500",
+          badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200", 
+          icon: CheckCircle2, 
+          label: "Verified by Mentor" 
+        };
+      
+      case "AI_VERIFIED":
+        return { 
+          borderColor: "border-l-blue-500",
+          badgeBg: "bg-blue-50 text-blue-700 border-blue-200", 
+          icon: Sparkles, 
+          label: "AI Verified" 
+        };
+
+      case "NEEDS_REVIEW":
+        return { 
+          borderColor: "border-l-orange-400",
+          badgeBg: "bg-orange-50 text-orange-700 border-orange-200", 
+          icon: UserCheck, 
+          label: "Needs Mentor Review" 
+        };
+
+      case "PENDING":
+        return { 
+          borderColor: "border-l-gray-400",
+          badgeBg: "bg-gray-100 text-gray-700 border-gray-200", 
+          icon: Clock, 
+          label: "AI Processing..." 
+        };
+
+      case "REJECTED":
+        return { 
+          borderColor: "border-l-red-500",
+          badgeBg: "bg-red-50 text-red-700 border-red-200", 
+          icon: ShieldAlert, 
+          label: "Rejected" 
+        };
+
+      default:
+        return { 
+          borderColor: "border-l-gray-300",
+          badgeBg: "bg-gray-100 text-gray-700 border-gray-200", 
+          icon: FileText, 
+          label: status || "Unknown" 
+        };
+    }
+  };
+
   // --- Derived Data (Stats & Filtering) ---
   const filteredCertificates = useMemo(() => {
     return certificates.filter((cert) => {
@@ -52,9 +105,11 @@ export default function CertificateList({ tenant }) {
       // 2. Filter Logic
       let matchesStatus = true;
       if (statusFilter === "VERIFIED") {
-        matchesStatus = cert.status !== "PENDING";
-      } else if (statusFilter === "PENDING") {
-        matchesStatus = cert.status === "PENDING" || !cert.status; // Assume pending if missing
+        matchesStatus = cert.status === "MANUAL_VERIFIED" || cert.status === "AI_VERIFIED";
+      } else if (statusFilter === "IN_PROGRESS") {
+        matchesStatus = cert.status === "PENDING" || cert.status === "NEEDS_REVIEW";
+      } else if (statusFilter === "REJECTED") {
+        matchesStatus = cert.status === "REJECTED";
       }
 
       return matchesSearch && matchesStatus;
@@ -62,34 +117,12 @@ export default function CertificateList({ tenant }) {
   }, [certificates, searchQuery, statusFilter]);
 
   const stats = useMemo(() => {
-    const total = certificates.length;
-    const pending = certificates.filter(c => c.status === 'PENDING').length;
     return {
-      total,
-      verified: total - pending, // Everything else is treated as verified/approved
-      pending
+      total: certificates.length,
+      verified: certificates.filter(c => c.status === 'MANUAL_VERIFIED' || c.status === 'AI_VERIFIED').length,
+      pending: certificates.filter(c => c.status === 'PENDING' || c.status === 'NEEDS_REVIEW').length
     };
   }, [certificates]);
-
-
-  // --- Styles Helper ---
-  const getStatusConfig = (status) => {
-    if (status === "PENDING") {
-      return { 
-        borderColor: "border-l-amber-400", 
-        badgeBg: "bg-amber-50 text-amber-700 border-amber-200", 
-        icon: Clock, 
-        label: "Pending Review" 
-      };
-    }
-    // Default to Verified/Approved for any other status (REJECTED, MANUAL_VERIFIED, etc.)
-    return { 
-      borderColor: "border-l-emerald-500", 
-      badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200", 
-      icon: CheckCircle2, 
-      label: "Verified" 
-    };
-  };
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState />;
@@ -108,7 +141,7 @@ export default function CertificateList({ tenant }) {
             <p className="text-2xl font-bold text-emerald-700">{stats.verified}</p>
         </div>
         <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 shadow-sm">
-            <p className="text-xs font-medium text-amber-600 uppercase">Pending</p>
+            <p className="text-xs font-medium text-amber-600 uppercase">In Progress</p>
             <p className="text-2xl font-bold text-amber-700">{stats.pending}</p>
         </div>
       </div>
@@ -117,13 +150,13 @@ export default function CertificateList({ tenant }) {
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-1 rounded-lg">
          {/* Tabs Filter */}
          <Tabs defaultValue="ALL" className="w-full sm:w-auto" onValueChange={setStatusFilter}>
-            <TabsList className="grid w-full grid-cols-3 sm:w-[300px]">
+            <TabsList className="grid w-full grid-cols-4 sm:w-[400px]">
               <TabsTrigger value="ALL">All</TabsTrigger>
               <TabsTrigger value="VERIFIED">Verified</TabsTrigger>
-              <TabsTrigger value="PENDING">Pending</TabsTrigger>
+              <TabsTrigger value="IN_PROGRESS">In Progress</TabsTrigger>
+              <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
             </TabsList>
           </Tabs>
-
 
           {/* Search Input */}
           <div className="relative w-full sm:w-64">
@@ -157,7 +190,7 @@ export default function CertificateList({ tenant }) {
                 className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${config.borderColor} overflow-hidden`}
               >
                 <CardContent className="p-5 flex flex-col h-full gap-4">
-                  {/* ... Same Card Content as previous implementation ... */}
+                  
                   {/* Header */}
                   <div className="flex justify-between items-start">
                     <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide flex items-center gap-1.5 border ${config.badgeBg}`}>
@@ -236,7 +269,7 @@ function EmptyState({ query, filter }) {
         {query 
           ? `No results found for "${query}"` 
           : filter !== 'ALL' 
-            ? `You don't have any ${filter.toLowerCase()} certificates yet.`
+            ? `You don't have any certificates matching the "${filter.toLowerCase().replace('_', ' ')}" filter.`
             : "Upload your certificates to get started."}
       </p>
       {(query || filter !== 'ALL') && (
@@ -263,6 +296,13 @@ function LoadingState() {
     </div>
   );
 }
+
 function ErrorState() { 
-    return <Alert variant="destructive"><AlertTitle>Error</AlertTitle></Alert> 
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error Loading Data</AlertTitle>
+        <AlertDescription>Could not retrieve certificates. Please refresh or try again later.</AlertDescription>
+      </Alert>
+    )
 }
