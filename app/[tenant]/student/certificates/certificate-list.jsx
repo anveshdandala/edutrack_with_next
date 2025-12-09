@@ -52,11 +52,9 @@ export default function CertificateList({ tenant }) {
       // 2. Filter Logic
       let matchesStatus = true;
       if (statusFilter === "VERIFIED") {
-        matchesStatus = cert.status === "VERIFIED" || cert.status === "MANUAL_VERIFIED";
+        matchesStatus = cert.status !== "PENDING";
       } else if (statusFilter === "PENDING") {
         matchesStatus = cert.status === "PENDING" || !cert.status; // Assume pending if missing
-      } else if (statusFilter === "REJECTED") {
-        matchesStatus = cert.status === "REJECTED";
       }
 
       return matchesSearch && matchesStatus;
@@ -64,27 +62,33 @@ export default function CertificateList({ tenant }) {
   }, [certificates, searchQuery, statusFilter]);
 
   const stats = useMemo(() => {
+    const total = certificates.length;
+    const pending = certificates.filter(c => c.status === 'PENDING').length;
     return {
-      total: certificates.length,
-      verified: certificates.filter(c => c.status === 'VERIFIED' || c.status === 'MANUAL_VERIFIED').length,
-      pending: certificates.filter(c => c.status === 'PENDING').length
+      total,
+      verified: total - pending, // Everything else is treated as verified/approved
+      pending
     };
   }, [certificates]);
 
 
   // --- Styles Helper ---
   const getStatusConfig = (status) => {
-    switch (status) {
-      case "MANUAL_VERIFIED":
-      case "VERIFIED":
-        return { borderColor: "border-l-emerald-500", badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2, label: "Verified" };
-      case "PENDING":
-        return { borderColor: "border-l-amber-400", badgeBg: "bg-amber-50 text-amber-700 border-amber-200", icon: Clock, label: "Pending Review" };
-      case "REJECTED":
-        return { borderColor: "border-l-red-500", badgeBg: "bg-red-50 text-red-700 border-red-200", icon: ShieldAlert, label: "Rejected" };
-      default:
-        return { borderColor: "border-l-gray-300", badgeBg: "bg-gray-100 text-gray-700 border-gray-200", icon: FileText, label: status };
+    if (status === "PENDING") {
+      return { 
+        borderColor: "border-l-amber-400", 
+        badgeBg: "bg-amber-50 text-amber-700 border-amber-200", 
+        icon: Clock, 
+        label: "Pending Review" 
+      };
     }
+    // Default to Verified/Approved for any other status (REJECTED, MANUAL_VERIFIED, etc.)
+    return { 
+      borderColor: "border-l-emerald-500", 
+      badgeBg: "bg-emerald-50 text-emerald-700 border-emerald-200", 
+      icon: CheckCircle2, 
+      label: "Verified" 
+    };
   };
 
   if (loading) return <LoadingState />;
@@ -93,7 +97,7 @@ export default function CertificateList({ tenant }) {
   return (
     <div className="space-y-6">
       
-      {/* 1. Stats Bar (The "Excess Thing") */}
+      {/* 1. Stats Bar */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
             <p className="text-xs font-medium text-gray-500 uppercase">Total Uploads</p>
@@ -113,13 +117,13 @@ export default function CertificateList({ tenant }) {
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-1 rounded-lg">
          {/* Tabs Filter */}
          <Tabs defaultValue="ALL" className="w-full sm:w-auto" onValueChange={setStatusFilter}>
-            <TabsList className="grid w-full grid-cols-4 sm:w-[400px]">
+            <TabsList className="grid w-full grid-cols-3 sm:w-[300px]">
               <TabsTrigger value="ALL">All</TabsTrigger>
               <TabsTrigger value="VERIFIED">Verified</TabsTrigger>
               <TabsTrigger value="PENDING">Pending</TabsTrigger>
-              <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
             </TabsList>
           </Tabs>
+
 
           {/* Search Input */}
           <div className="relative w-full sm:w-64">
