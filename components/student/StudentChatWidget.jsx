@@ -5,11 +5,7 @@ import { ChatInterface } from "@/components/student/chat-interface";
 
 const DEFAULT_PROFILE = {
   name: "Student",
-  role: "Student",
-  department: "General",
-  current_semester: "N/A",
-  skills: [], 
-  experience: []
+  context_type: "EMPTY"
 };
 
 export default function StudentChatWidget({ tenant, user }) {
@@ -19,42 +15,31 @@ export default function StudentChatWidget({ tenant, user }) {
   useEffect(() => {
     const fetchStudentContext = async () => {
       try {
-        if (!user || !user.id) {
-            console.warn("No user ID provided to ChatWidget");
-            setProfileData(DEFAULT_PROFILE);
-            return;
-        }
-
-        // 1. Fetch Detailed Info via Proxy
-        const res = await fetch(`/api/student-details?tenant=${tenant}&id=${user.id}`);
+        // 1. Call our new Proxy
+        const res = await fetch(`/api/student/profile-data?tenant=${tenant}`);
         
-        let details = {};
         if (res.ok) {
-            details = await res.json();
-            console.log("Fetched detailed student info:", details);
+            const apiData = await res.json();
+            console.log("ChatBot Context Loaded (New Endpoint):", apiData);
+
+            // 2. Map the API response to a structure the Chatbot uses
+            // We wrap the raw API response so the prompt can see everything
+            const mappedProfile = {
+               // Fallback names if not in API response
+               name: apiData.full_name || user?.first_name || "Student",
+               
+               // We pass the entire object from the backend
+               full_record: apiData, 
+               
+               // A flag to tell gemini.js how to handle this
+               context_type: "LIVE_STUDENT_DATA" 
+            };
+
+            setProfileData(mappedProfile);
         } else {
-            console.warn("Could not fetch detailed info, using basic user data.");
+            console.warn("Failed to fetch profile-data, using default.");
+            setProfileData(DEFAULT_PROFILE);
         }
-
-        // 2. Map Administrative Data
-        const mappedProfile = {
-           name: `${user.first_name} ${user.last_name}`.trim() || user.username || "Student",
-           role: "Student", 
-           details: {
-             roll_number: details.roll_number || user.roll_number || "N/A",
-             department: details.department_name || details.department || "General", 
-             year: details.current_year || user.batch_year || "N/A",
-             semester: details.current_semester || user.current_semester || "N/A",
-             email: user.email,
-             section: details.section || "N/A"
-           },
-           context_type: "ADMINISTRATIVE_RECORD", 
-           skills: [], 
-           experience: [] 
-        };
-
-        console.log("ChatBot Context Loaded:", mappedProfile);
-        setProfileData(mappedProfile);
 
       } catch (error) {
         console.error("Error loading student context:", error);
@@ -64,10 +49,9 @@ export default function StudentChatWidget({ tenant, user }) {
       }
     };
 
-    if (tenant && user) fetchStudentContext();
+    if (tenant) fetchStudentContext();
   }, [tenant, user]);
 
-  // Don't render until we have context
   if (loading) return null; 
 
   return (

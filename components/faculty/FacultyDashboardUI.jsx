@@ -2,55 +2,56 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter for refreshing data
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Users, FileText, CheckCircle2, Clock, ShieldAlert, 
-  ExternalLink, Download, Check, X, Loader2
+  ExternalLink, Download, Check, X, Loader2, Sparkles
 } from "lucide-react";
 
-// Helper for status styles
+// Updated Helper based on your Backend Model
 const getStatusConfig = (status) => {
   switch (status) {
-    case "VERIFIED":
     case "MANUAL_VERIFIED":
-      return { badge: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2, label: "Verified" };
+      return { badge: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2, label: "Verified by Mentor" };
+    
+    case "AI_VERIFIED":
+      return { badge: "bg-blue-100 text-blue-700 border-blue-200", icon: Sparkles, label: "AI Verified" };
+    
     case "PENDING":
-      return { badge: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock, label: "Pending" };
+      return { badge: "bg-gray-100 text-gray-700 border-gray-200", icon: Clock, label: "AI Processing" };
+    
+    case "NEEDS_REVIEW": // Use this for Faculty Approval Queue
+      return { badge: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: Clock, label: "Needs Review" };
+    
     case "REJECTED":
       return { badge: "bg-red-100 text-red-700 border-red-200", icon: ShieldAlert, label: "Rejected" };
+    
     default:
-      return { badge: "bg-gray-100 text-gray-700 border-gray-200", icon: FileText, label: status || "Draft" };
+      return { badge: "bg-gray-50 text-gray-500 border-gray-200", icon: FileText, label: status || "Unknown" };
   }
 };
 
 export default function FacultyDashboardUI({ tenant, students, certificates }) {
   const router = useRouter();
-  const [processingId, setProcessingId] = useState(null); // Track which ID is loading
+  const [processingId, setProcessingId] = useState(null);
 
-  // --- Verification Handler ---
   const handleVerification = async (certId, newStatus) => {
     setProcessingId(certId);
     try {
       const res = await fetch("/api/verify-certificate", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: certId,
-          status: newStatus,
-          tenant: tenant
-        }),
+        body: JSON.stringify({ id: certId, status: newStatus, tenant }),
       });
 
       if (!res.ok) throw new Error("Failed to verify");
-
-      // Refresh the page data to show new status
       router.refresh(); 
     } catch (error) {
       console.error(error);
-      alert("Error updating certificate status");
+      alert("Error updating status");
     } finally {
       setProcessingId(null);
     }
@@ -58,14 +59,11 @@ export default function FacultyDashboardUI({ tenant, students, certificates }) {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Faculty Dashboard</h1>
-        <p className="text-muted-foreground">Overview of students and recent submissions.</p>
-      </div>
+      {/* ... Header ... */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* --- LEFT COLUMN: ASSIGNED STUDENTS --- */}
+        {/* ... Left Column (Students) ... */}
         <div className="lg:col-span-1">
           <Card className="h-[calc(100vh-200px)] flex flex-col">
             <CardHeader>
@@ -133,105 +131,79 @@ export default function FacultyDashboardUI({ tenant, students, certificates }) {
           </Card>
         </div>
 
-        {/* --- RIGHT COLUMN: ALL CERTIFICATES --- */}
+        {/* RIGHT COLUMN: CERTIFICATES */}
         <div className="lg:col-span-2">
           <Card className="h-[calc(100vh-200px)] flex flex-col">
             <CardHeader className="border-b border-gray-100 bg-gray-50/50">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-purple-600" />
-                  <span>Student Certificates</span>
+                  <span>Submissions</span>
                 </CardTitle>
-                <div className="flex gap-2">
-                   <Badge variant="outline" className="bg-white">
-                      Total: {certificates.length}
-                   </Badge>
-                </div>
+                <Badge variant="outline" className="bg-white">Total: {certificates.length}</Badge>
               </div>
             </CardHeader>
             
             <CardContent className="flex-1 overflow-y-auto custom-scrollbar p-6">
               {certificates.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <FileText className="w-12 h-12 text-gray-200 mb-2" />
-                  <p>No certificates submitted yet.</p>
+                  <p>No certificates found.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {certificates.map((cert) => {
                     const status = getStatusConfig(cert.status);
                     const StatusIcon = status.icon;
-                    const isPending = cert.status === "PENDING";
-                    const isProcessing = processingId === cert.id;
-
+                    
+                    // Show actions if it Needs Review OR is AI Verified (waiting for final stamp)
+                    const showActions = cert.status === "NEEDS_REVIEW" || cert.status === "AI_VERIFIED" || cert.status === "PENDING";
+                    
                     return (
-                      <div 
-                        key={cert.id} 
-                        className="flex flex-col bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow relative overflow-hidden"
-                      >
-                        {/* Status Stripe */}
-                        <div className={`absolute top-0 left-0 w-1 h-full ${
-                            cert.status === 'VERIFIED' || cert.status === 'MANUAL_VERIFIED' ? 'bg-green-500' : 
-                            cert.status === 'REJECTED' ? 'bg-red-500' : 'bg-yellow-400'
-                        }`} />
-
+                      <div key={cert.id} className="flex flex-col bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow relative overflow-hidden">
+                        
                         {/* Header */}
-                        <div className="flex justify-between items-start mb-3 pl-2">
+                        <div className="flex justify-between items-start mb-3">
                           <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 ${status.badge}`}>
                              <StatusIcon size={10} /> {status.label}
                           </div>
-                          <span className="text-[10px] text-gray-400 font-mono">
-                             ID: {cert.student || "N/A"}
-                          </span>
                         </div>
 
                         {/* Content */}
-                        <div className="mb-4 pl-2">
+                        <div className="mb-4">
                            <h4 className="font-bold text-sm text-gray-900 line-clamp-1" title={cert.title}>
                              {cert.title || "Untitled"}
                            </h4>
-                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                             {cert.issuing_organization || "Unknown Issuer"}
+                           <p className="text-xs text-gray-500 mt-0.5">
+                             {cert.issuing_organization || "Unknown Org"}
                            </p>
                         </div>
 
-                        {/* Footer / Actions */}
-                        <div className="mt-auto pl-2 pt-2 border-t border-gray-50 space-y-2">
+                        {/* Footer */}
+                        <div className="mt-auto pt-2 border-t border-gray-50 space-y-2">
                            <div className="flex gap-2">
                                 <Button size="sm" variant="outline" className="flex-1 h-7 text-xs" asChild>
-                                    <a href={cert.file_url} target="_blank">
-                                    <Download className="w-3 h-3 mr-1" /> File
-                                    </a>
+                                    <a href={cert.file_url} target="_blank"><Download className="w-3 h-3 mr-1" /> View</a>
                                 </Button>
-                                {cert.verification_url && (
-                                    <Button size="sm" variant="ghost" className="flex-1 h-7 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100" asChild>
-                                    <a href={cert.verification_url} target="_blank">
-                                        Verify Link
-                                    </a>
-                                    </Button>
-                                )}
                            </div>
 
-                           {/* Faculty Actions: Only show if PENDING */}
-                           {isPending && (
+                           {showActions && (
                                 <div className="flex gap-2 pt-1">
                                     <Button 
                                         size="sm" 
                                         className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700 text-white"
-                                        disabled={isProcessing}
+                                        disabled={processingId === cert.id}
                                         onClick={() => handleVerification(cert.id, "MANUAL_VERIFIED")}
                                     >
-                                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin"/> : <Check className="w-3 h-3 mr-1" />}
+                                        {processingId === cert.id ? <Loader2 className="w-3 h-3 animate-spin"/> : <Check className="w-3 h-3 mr-1" />}
                                         Approve
                                     </Button>
                                     <Button 
                                         size="sm" 
                                         variant="destructive"
                                         className="flex-1 h-8 text-xs"
-                                        disabled={isProcessing}
+                                        disabled={processingId === cert.id}
                                         onClick={() => handleVerification(cert.id, "REJECTED")}
                                     >
-                                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin"/> : <X className="w-3 h-3 mr-1" />}
                                         Reject
                                     </Button>
                                 </div>

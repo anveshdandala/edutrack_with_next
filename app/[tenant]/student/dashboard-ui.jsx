@@ -1,8 +1,8 @@
 // D:\nah\SIH\newshi\app\[tenant]\student\dashboard-ui.jsx
 "use client";
-
+import StudentAnalytics from "@/components/student/dashboard/StudentAnalytics";
 import { useRouter, useParams } from "next/navigation";
-import {
+import {    
     Edit, Activity, Briefcase, ChevronRight, FileText, Sparkles,
     Award, Zap, Calendar, BarChart3, TrendingUp, PieChart as PieChartIcon
 } from "lucide-react";
@@ -10,16 +10,9 @@ import { DashboardHeader } from "@/components/student/dashboard-header";
 import StudentChatWidget from "@/components/student/StudentChatWidget";
 import { MOCK_STUDENT_PROFILE } from "@/components/student/constants";
 import { useEffect } from "react";
-import {
-    PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip
-} from "recharts";
 
-const CERT_DISTRIBUTION = [
-    { name: 'MOOC', value: 4, color: '#3b82f6' },  // Blue
-    { name: 'Workshops', value: 3, color: '#000000ff' }, // Violet
-    { name: 'Hackathons', value: 2, color: '#10b981' }, // Emerald
-    { name: 'Projects', value: 3, color: '#f59e0b' }, // Amber
-];
+
+
 
 export default function StudentDashboardUI({ user, certificatesSlot, internshipsSlot }) {
     const router = useRouter();
@@ -38,12 +31,7 @@ export default function StudentDashboardUI({ user, certificatesSlot, internships
         if (path === 'certificates') router.push(`/${tenant}/student/certificates`);
     };
 
-    const stats = [
-        { label: 'GPA', value: 8.7, max: 10, color: 'from-indigo-500 to-blue-500', bg: 'bg-indigo-50', suffix: '/10' },
-        { label: 'Projects', value: 5, max: 8, color: 'from-indigo-500 to-blue-500', bg: 'bg-blue-50', suffix: '' },
-        { label: 'Certificates', value: 6, max: 10, color: 'from-indigo-500 to-blue-500', bg: 'bg-emerald-50', suffix: '' },
-        { label: 'Events', value: 12, max: 15, color: 'from-indigo-500 to-blue-500', bg: 'bg-purple-50', suffix: '' },
-    ];
+
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 h-screen overflow-hidden">
@@ -178,95 +166,8 @@ export default function StudentDashboardUI({ user, certificatesSlot, internships
                     <div className="p-6 md:p-8 space-y-8 pb-32">
 
                         {/* 1. Combined Performance & Analytics Section */}
-                        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-
-                            <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                        <BarChart3 className="text-blue-600" size={20} />
-                                        Performance & Certificates
-                                    </h3>
-                                    <p className="text-sm text-gray-500 mt-1">Academic metrics and certification distribution</p>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs font-medium text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
-                                    <TrendingUp size={14} className="text-blue-500" />
-                                    <span>+12% vs last sem</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-center">
-                                {/* LEFT: Tighter Bar Chart */}
-                                <div className="xl:col-span-7 h-64 flex items-end justify-between gap-2 px-2 border-r border-gray-100 pr-8">
-                                    {stats.map((stat, idx) => {
-                                        const percentage = (stat.value / stat.max) * 100;
-                                        return (
-                                            <div key={idx} className="flex flex-col items-center justify-end h-full w-full group cursor-pointer">
-                                                <div className="mb-3 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300">
-                                                    <span className="bg-gray-900 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-xl">
-                                                        {stat.value}
-                                                    </span>
-                                                </div>
-
-                                                <div className={`w-full max-w-[48px] bg-gray-100 rounded-t-xl relative h-full flex items-end overflow-hidden ${stat.bg}`}>
-                                                    <div
-                                                        className={`w-full rounded-t-xl transition-all duration-1000 ease-out bg-gradient-to-t ${stat.color} opacity-90 group-hover:opacity-100`}
-                                                        style={{ height: `${percentage}%` }}
-                                                    ></div>
-                                                </div>
-
-                                                <div className="mt-3 text-center">
-                                                    <p className="text-xs font-bold text-gray-700 uppercase tracking-wide truncate w-full">{stat.label}</p>
-                                                    <p className="text-[10px] text-gray-400 font-medium group-hover:text-blue-600 transition-colors">
-                                                        {stat.value}{stat.suffix}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* RIGHT: Pie Chart using Recharts */}
-                                <div className="xl:col-span-5 flex flex-col items-center justify-center p-4">
-                                    <div className="w-full h-[200px] relative">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie
-                                                    data={CERT_DISTRIBUTION}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    innerRadius={60}
-                                                    outerRadius={80}
-                                                    paddingAngle={5}
-                                                    dataKey="value"
-                                                >
-                                                    {CERT_DISTRIBUTION.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                                    ))}
-                                                </Pie>
-                                                <RechartsTooltip
-                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                                    itemStyle={{ fontSize: '12px', fontWeight: 'bold', color: '#374151' }}
-                                                />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                        {/* Center Text */}
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                            <span className="text-2xl font-black text-gray-900">12</span>
-                                            <span className="text-xs text-gray-500 font-medium">Total</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Legend */}
-                                    <div className="flex flex-wrap justify-center gap-3 mt-2">
-                                        {CERT_DISTRIBUTION.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-1.5">
-                                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
-                                                <span className="text-xs font-semibold text-gray-600">{item.name}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="mb-8">
+                           <StudentAnalytics tenant={tenant} />
                         </div>
 
 

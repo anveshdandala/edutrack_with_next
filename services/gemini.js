@@ -1,16 +1,14 @@
 // services/gemini.js
-import { GoogleGenerativeAI } from "@google/generative-ai"; // <--- CHANGED IMPORT
+import { GoogleGenerativeAI } from "@google/generative-ai"; 
 import {
   GEMINI_MODEL,
   SYSTEM_INSTRUCTION, 
 } from "@/components/student/constants";
 
-// Initialize the client with the Stable SDK class
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_API_KEY);
 
 const Role = { USER: "user", MODEL: "model" };
 
-// Helper to format messages for the SDK
 const mapMessagesToContent = (messages) => {
   return messages.map((msg) => ({
     role: msg.role === Role.USER ? "user" : "model",
@@ -20,34 +18,28 @@ const mapMessagesToContent = (messages) => {
 
 export const createChatSession = (history, profile) => {
   
-  // 1. Construct Dynamic Context based on Profile Type
   let contextInstruction = "";
 
-  if (profile.context_type === "ADMINISTRATIVE_RECORD") {
-      // Logic for Administrative Data (From Student Details API)
+  // --- NEW LOGIC FOR THE NEW ENDPOINT ---
+  if (profile.context_type === "LIVE_STUDENT_DATA") {
       contextInstruction = `
-        CONTEXT: You are chatting with a registered student based on their official university record.
+        CONTEXT: You are chatting with a registered student. You have access to their comprehensive academic and extracurricular record.
         
-        STUDENT DETAILS:
-        - Name: ${profile.name}
-        - Roll No: ${profile.details?.roll_number || "N/A"}
-        - Semester: ${profile.details?.semester || "N/A"}
-        - Department: ${profile.details?.department || "General"}
+        STUDENT RECORD (JSON):
+        ${JSON.stringify(profile.full_record, null, 2)}
         
-        GUIDANCE MODE: 
-        Since you only have administrative data (not their full resume/skills yet), your goal is to:
-        1. Ask them about their interests to fill in the gaps.
-        2. Guide them on what electives or paths match their Department/Semester.
-        3. Encourage them to upload a resume or certificates to get better advice.
+        GUIDANCE MODE:
+        1. Use the 'gpa', 'attendance', and 'department' to tailor academic advice.
+        2. Look at 'certificates', 'internships', or 'projects' in the JSON to suggest career paths.
+        3. If specific fields (like 'skills') are empty in the JSON, ask the student about them to build a better roadmap.
       `;
+  } 
+  // ... Keep existing logic for fallback/resume if you want, or remove ...
+  else if (profile.context_type === "ADMINISTRATIVE_RECORD") {
+      // (Old logic for basic details)
+      contextInstruction = `Student Basic Info: ${JSON.stringify(profile.details)}`;
   } else {
-      // Logic for Rich Resume Data
-      contextInstruction = `
-        CONTEXT: You have the student's full resume and tailored profile.
-        
-        STUDENT PROFILE:
-        ${JSON.stringify(profile, null, 2)}
-      `;
+      contextInstruction = `Student Profile: ${JSON.stringify(profile)}`;
   }
 
   const finalInstruction = `
@@ -56,13 +48,11 @@ export const createChatSession = (history, profile) => {
     ${contextInstruction}
   `;
 
-  // 2. Initialize Model (Using the correct method for @google/generative-ai)
   const model = genAI.getGenerativeModel({ 
       model: GEMINI_MODEL,
       systemInstruction: finalInstruction 
   });
   
-  // 3. Start Chat
   return model.startChat({
     history: mapMessagesToContent(history),
     generationConfig: {

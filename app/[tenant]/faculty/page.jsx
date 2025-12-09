@@ -5,20 +5,22 @@ import DashboardSkeleton from "@/components/faculty/DashboardSkeleton";
 import { serverFetch } from "@/lib/server-api";
 
 async function DashboardContent({ tenant }) {
-  // 1. Parallel Fetching: Get Students AND Certificates
+  // 1. Fetch Students
   const studentsReq = serverFetch("/administration/faculty-students/", {
     tenant,
     cache: "no-store",
   });
 
-  const certificatesReq = serverFetch("/achievements/certificates", {
+  // 2. Fetch Certificates (Ensure trailing slash!)
+  const certificatesReq = serverFetch("/achievements/certificates/", {
     tenant,
     cache: "no-store",
   });
 
   const [studentsData, certificatesData] = await Promise.all([studentsReq, certificatesReq]);
 
-  // 2. Safe Parsing
+  // 3. Handle Empty/Error Responses Safely
+  // If fetch fails, serverFetch returns null.
   const students = Array.isArray(studentsData) ? studentsData : studentsData?.results || [];
   const certificates = Array.isArray(certificatesData) ? certificatesData : certificatesData?.results || [];
 
@@ -32,24 +34,14 @@ async function DashboardContent({ tenant }) {
 }
 
 export default async function FacultyPage({ params }) {
-  const resolvedParams = await params;
-  const { tenant } = resolvedParams;
+  const { tenant } = await params;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar showAuthButtons={false} />
-      <Suspense fallback={<MainSkeletonWrapper />}>
+      <Suspense fallback={<DashboardSkeleton />}>
         <DashboardContent tenant={tenant} />
       </Suspense>
-    </div>
-  );
-}
-
-function MainSkeletonWrapper() {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="h-8 w-64 bg-gray-200 rounded mb-8 animate-pulse" />
-      <DashboardSkeleton />
     </div>
   );
 }

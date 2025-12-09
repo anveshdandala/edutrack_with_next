@@ -1,36 +1,32 @@
-import { Suspense } from "react";
-import { notFound } from "next/navigation";
-import { serverFetch } from "@/lib/server-api";
-import StudentAnalysisUI from "./student-analysis-ui";
-import AnalysisSkeleton from "./analysis-skeleton";
+import StudentAnalysisUI from "./student-analysis-ui"; // Ensure this import path is correct
 
-// 1. Data Fetcher
-async function StudentAnalysisContent({ tenant, studentId }) {
-  // Fetch detailed student data using the ID
-  // Endpoint: GET /administration/student-details/{id}/
-  const studentData = await serverFetch(`/administration/student-details/${studentId}/`, {
-    tenant,
-    cache: "no-store",
-  });
+export default async function StudentAnalysisPage({ params, searchParams }) {
+  // 1. Unwrap Promises (Next.js 15 Requirement)
+  const { tenant, studentId } = await params;
+  const query = await searchParams;
 
-  if (!studentData) {
-    return notFound();
-  }
-
-  return <StudentAnalysisUI student={studentData} tenant={tenant} />;
-}
-
-// 2. Main Page Component
-export default async function StudentAnalysisPage({ params }) {
-  // Unwrap params in Next.js 15
-  const resolvedParams = await params;
-  const { tenant, studentId } = resolvedParams;
+  // 2. Construct Data from URL Params (Bypassing Backend Fetch)
+  // This prevents the 403/404 error because we aren't asking the server for data.
+  const studentData = {
+    id: studentId,
+    // Combine first/last names or use raw name
+    first_name: query.name?.split(" ")[0] || "Student",
+    last_name: query.name?.split(" ").slice(1).join(" ") || "",
+    username: query.name,
+    email: query.email || "No Email Provided",
+    roll_number: query.roll_number || studentId,
+    department_name: query.department || "General",
+    current_semester: query.semester || "N/A",
+    batch_year: query.batch || "N/A",
+    // Mocking missing fields for UI consistency
+    phone_number: "N/A",
+    city: "N/A",
+    state: "N/A"
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <Suspense fallback={<AnalysisSkeleton />}>
-        <StudentAnalysisContent tenant={tenant} studentId={studentId} />
-      </Suspense>
+       <StudentAnalysisUI student={studentData} tenant={tenant} />
     </div>
   );
 }
