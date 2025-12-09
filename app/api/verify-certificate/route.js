@@ -21,7 +21,7 @@ export async function PATCH(request) {
 
     // Django Endpoint: PATCH /api/{tenant}/achievements/verify-certificate/{id}/
     const cleanBase = API_BASE.replace(/\/$/, "");
-    const djangoUrl = `${cleanBase}/api/${tenant}/achievements/verify-certificate/${id}/`;
+    const djangoUrl = `${cleanBase}/api/${tenant}/achievements/verify-certificate/${id}`;
 
     console.log(`[Proxy] Verifying certificate ${id} to ${status}`);
 
