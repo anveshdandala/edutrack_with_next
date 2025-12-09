@@ -68,11 +68,36 @@ export default function ResumeClientWrapper() {
   }, [DATA_KEY]);
 
   const handleSave = async (currentData) => {
-    // ... your existing save logic
+    if (!resumeId) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/resume/resume/${resumeId}/?tenant=${tenant}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+           tailored_content: currentData 
+        }),
+      });
+      if (res.ok) {
+         console.log("Resume Saved Successfully");
+      } else {
+         console.error("Failed to save resume");
+      }
+    } catch (e) {
+      console.error("Error saving resume:", e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleReset = () => {
-     // ... your existing reset logic
+     if (confirm("Are you sure you want to create a new resume? This will clear current progress.")) {
+        localStorage.removeItem(ID_KEY);
+        localStorage.removeItem(DATA_KEY);
+        setResumeId(null);
+        setResumeData(null);
+        setStep("input");
+     }
   };
 
   // --- RENDER LOGIC ---
@@ -110,6 +135,8 @@ export default function ResumeClientWrapper() {
 
           {/* --- CHATBOT INTEGRATION --- */}
           <div className="fixed bottom-6 right-6 z-50 w-80 md:w-96">
+            {/* LOGGING THE DATA AS REQUESTED */}
+            {console.log("Passsing to ChatInterface:", resumeData)}
             <ChatInterface 
               // PASS THE RESUME DATA DIRECTLY
               // We use 'resumeData' because that holds the tailored content from backend/localstorage

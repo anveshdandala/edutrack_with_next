@@ -1,17 +1,16 @@
-import { GoogleGenAI } from "@google/genai";
+// services/gemini.js
+import { GoogleGenerativeAI } from "@google/generative-ai"; // <--- CHANGED IMPORT
 import {
   GEMINI_MODEL,
-  SYSTEM_INSTRUCTION,
+  SYSTEM_INSTRUCTION, 
 } from "@/components/student/constants";
 
-// Initialize the client
-// NOTE: In a production Next.js app, this key would come from NEXT_PUBLIC_API_KEY or a proxy server.
-// For this demo, we use process.env.API_KEY as strictly requested.
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_API_KEY });
+// Initialize the client with the Stable SDK class
+const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_API_KEY);
 
-/**
- * Transforms our internal ChatMessage format to the SDK's Content format.
- */
+const Role = { USER: "user", MODEL: "model" };
+
+// Helper to format messages for the SDK
 const mapMessagesToContent = (messages) => {
   return messages.map((msg) => ({
     role: msg.role === Role.USER ? "user" : "model",
@@ -19,69 +18,66 @@ const mapMessagesToContent = (messages) => {
   }));
 };
 
-/**
- * Initializes a chat session with history and system instructions.
- */
 export const createChatSession = (history, profile) => {
-  // We embed the profile into the system instruction so the model is context-aware.
-  const personalizedSystemInstruction = `
+  
+  // 1. Construct Dynamic Context based on Profile Type
+  let contextInstruction = "";
+
+  if (profile.context_type === "ADMINISTRATIVE_RECORD") {
+      // Logic for Administrative Data (From Student Details API)
+      contextInstruction = `
+        CONTEXT: You are chatting with a registered student based on their official university record.
+        
+        STUDENT DETAILS:
+        - Name: ${profile.name}
+        - Roll No: ${profile.details?.roll_number || "N/A"}
+        - Semester: ${profile.details?.semester || "N/A"}
+        - Department: ${profile.details?.department || "General"}
+        
+        GUIDANCE MODE: 
+        Since you only have administrative data (not their full resume/skills yet), your goal is to:
+        1. Ask them about their interests to fill in the gaps.
+        2. Guide them on what electives or paths match their Department/Semester.
+        3. Encourage them to upload a resume or certificates to get better advice.
+      `;
+  } else {
+      // Logic for Rich Resume Data
+      contextInstruction = `
+        CONTEXT: You have the student's full resume and tailored profile.
+        
+        STUDENT PROFILE:
+        ${JSON.stringify(profile, null, 2)}
+      `;
+  }
+
+  const finalInstruction = `
     ${SYSTEM_INSTRUCTION}
     
-    CURRENT STUDENT PROFILE:
-    ${JSON.stringify(profile, null, 2)}
+    ${contextInstruction}
   `;
 
-  return ai.chats.create({
-    model: GEMINI_MODEL,
+  // 2. Initialize Model (Using the correct method for @google/generative-ai)
+  const model = genAI.getGenerativeModel({ 
+      model: GEMINI_MODEL,
+      systemInstruction: finalInstruction 
+  });
+  
+  // 3. Start Chat
+  return model.startChat({
     history: mapMessagesToContent(history),
-    config: {
-      systemInstruction: personalizedSystemInstruction,
-      temperature: 0.7, // Balanced creativity and precision
+    generationConfig: {
+      temperature: 0.7,
     },
   });
 };
 
-/**
- * Sends a message to the model and returns the text response.
- */
-export const sendMessageToGemini = async (chat, message) => {
+export const sendMessageToGemini = async (chatSession, message) => {
   try {
-    const response = await chat.sendMessage({ message });
-    return (
-      response.text ||
-      "I'm sorry, I couldn't generate a roadmap step right now."
-    );
+    const result = await chatSession.sendMessage(message);
+    const response = await result.response;
+    return response.text();
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "I encountered a connection error. Please try again in a moment.";
-  }
-};
-
-/**
- * Generates a one-time summary of the student's profile and trajectory.
- */
-export const generateProfileSummary = async (profile) => {
-  try {
-    const prompt = `
-      You are an academic advisor. Analyze the following student profile and provide a concise summary (max 3 sentences).
-      
-      Structure the summary to:
-      1. Highlight their key technical strength.
-      2. Comment on their current "flow" or career trajectory (e.g., "The student is heavily leaning towards Frontend development...").
-      3. Point out one high-level area to focus on next.
-
-      PROFILE:
-      ${JSON.stringify(profile, null, 2)}
-    `;
-
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: prompt,
-    });
-
-    return response.text;
-  } catch (error) {
-    console.error("Summary generation error:", error);
-    return "Unable to generate profile summary at this time.";
+    return "I'm having trouble connecting to the university server. Please try again.";
   }
 };

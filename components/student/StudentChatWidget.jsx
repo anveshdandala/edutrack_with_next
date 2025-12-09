@@ -1,72 +1,79 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChatInterface } from "@/components/student/chat-interface"; // Update path if needed
+import { ChatInterface } from "@/components/student/chat-interface"; 
 
-// Default fallback in case no resume exists yet
 const DEFAULT_PROFILE = {
   name: "Student",
   role: "Student",
-  skills: [],
+  department: "General",
+  current_semester: "N/A",
+  skills: [], 
   experience: []
 };
 
-export default function StudentChatWidget({ tenant }) {
-  const [resumeData, setResumeData] = useState(null);
+export default function StudentChatWidget({ tenant, user }) {
+  const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchResumeContext = async () => {
+    const fetchStudentContext = async () => {
       try {
-        // 1. Get the ID from LocalStorage (Saved during generation)
-        // Using the same key pattern you used in JobInputForm
-        const currentId = typeof window !== "undefined"
-          ? localStorage.getItem(`current_resume_id_${tenant}`)
-          : null;
-
-        if (!currentId) {
-          console.log("No active resume ID found in storage.");
-          setResumeData(DEFAULT_PROFILE);
-          setLoading(false);
-          return;
+        if (!user || !user.id) {
+            console.warn("No user ID provided to ChatWidget");
+            setProfileData(DEFAULT_PROFILE);
+            return;
         }
 
-        // 2. Fetch the Resume Data
-        const res = await fetch(`/api/resume/resume/${currentId}/?tenant=${tenant}`);
-
+        // 1. Fetch Detailed Info via Proxy
+        const res = await fetch(`/api/student-details?tenant=${tenant}&id=${user.id}`);
+        
+        let details = {};
         if (res.ok) {
-          const serverData = await res.json();
-
-          // 3. Extract tailored content (The logic you provided)
-          const content = serverData.tailored_content || serverData;
-
-          console.log("ChatBot Context Loaded:", content);
-          setResumeData(content);
+            details = await res.json();
+            console.log("Fetched detailed student info:", details);
         } else {
-          console.error("Failed to fetch resume for chat context");
-          setResumeData(DEFAULT_PROFILE);
+            console.warn("Could not fetch detailed info, using basic user data.");
         }
+
+        // 2. Map Administrative Data
+        const mappedProfile = {
+           name: `${user.first_name} ${user.last_name}`.trim() || user.username || "Student",
+           role: "Student", 
+           details: {
+             roll_number: details.roll_number || user.roll_number || "N/A",
+             department: details.department_name || details.department || "General", 
+             year: details.current_year || user.batch_year || "N/A",
+             semester: details.current_semester || user.current_semester || "N/A",
+             email: user.email,
+             section: details.section || "N/A"
+           },
+           context_type: "ADMINISTRATIVE_RECORD", 
+           skills: [], 
+           experience: [] 
+        };
+
+        console.log("ChatBot Context Loaded:", mappedProfile);
+        setProfileData(mappedProfile);
+
       } catch (error) {
-        console.error("Error loading chat context:", error);
-        setResumeData(DEFAULT_PROFILE);
+        console.error("Error loading student context:", error);
+        setProfileData(DEFAULT_PROFILE);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchResumeContext();
-  }, [tenant]);
+    if (tenant && user) fetchStudentContext();
+  }, [tenant, user]);
 
-  // Optional: Don't show chat until we know context, or show with default
-  if (loading) return null;
+  // Don't render until we have context
+  if (loading) return null; 
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-80 md:w-96">
-      {/* We pass the fetched resume data as the 'studentProfile' 
-          The ChatInterface internally needs to handle this structure 
-      */}
       <ChatInterface
-        studentProfile={resumeData || DEFAULT_PROFILE}
+        studentProfile={profileData || DEFAULT_PROFILE}
         tenant={tenant}
       />
     </div>

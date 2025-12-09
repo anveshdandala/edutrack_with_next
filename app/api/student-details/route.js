@@ -7,9 +7,10 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const tenant = searchParams.get("tenant");
+    const id = searchParams.get("id");
 
-    if (!tenant) {
-      return NextResponse.json({ error: "Tenant is required" }, { status: 400 });
+    if (!tenant || !id) {
+      return NextResponse.json({ error: "Tenant and ID are required" }, { status: 400 });
     }
 
     const cookieStore = await cookies();
@@ -19,12 +20,9 @@ export async function GET(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Construct Django URL
     const cleanBase = API_BASE.replace(/\/$/, "");
-    // Trying the same logical endpoint, assuming the user might have fixed backend or we'll debug the 404 here
-    const djangoUrl = `${cleanBase}/api/${tenant}/achievements/certificates`; 
-
-    console.log(`[Proxy] Fetching certificates from: ${djangoUrl}`);
+    // Calls Django: /api/{tenant}/administration/student-details/{id}/
+    const djangoUrl = `${cleanBase}/api/${tenant}/administration/student-details/${id}/`; 
 
     const res = await fetch(djangoUrl, {
       method: "GET",
@@ -36,22 +34,16 @@ export async function GET(request) {
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error("[Proxy] Django Error:", errorText);
-      return NextResponse.json(
-        { error: "Failed to fetch certificates from backend." }, 
-        { status: res.status }
-      );
+        // Log locally but don't crash client
+        console.error(`[Proxy Error] Failed to fetch student details. Status: ${res.status}`);
+        return NextResponse.json({ error: "Failed to fetch student details" }, { status: res.status });
     }
 
     const data = await res.json();
     return NextResponse.json(data, { status: 200 });
 
   } catch (error) {
-    console.error("[Proxy] Fetch Error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    console.error(`[Proxy Error] Internal Server Error:`, error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

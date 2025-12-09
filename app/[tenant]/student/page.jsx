@@ -3,6 +3,12 @@ import { redirect } from "next/navigation";
 import { serverFetch } from "@/lib/server-api"; // <--- Fixed Import Name
 import StudentDashboardUI from "./dashboard-ui";
 
+import { Suspense } from "react";
+import RecentCertificates from "@/components/student/dashboard/recent-certificates";
+import RecentCertificatesSkeleton from "@/components/student/dashboard/recent-certificates-skeleton";
+import RecentInternships from "@/components/student/dashboard/recent-internships";
+import RecentInternshipsSkeleton from "@/components/student/dashboard/recent-internships-skeleton";
+
 export default async function StudentPage({ params }) {
   // 1. Get the tenant from the URL (e.g., 'vmeg')
   const { tenant } = await params;
@@ -23,5 +29,20 @@ export default async function StudentPage({ params }) {
 
   if (!user) redirect(`/${tenant}/auth/login`);
 
-  return <StudentDashboardUI user={user} />;
+  return (
+    <StudentDashboardUI 
+       user={user} 
+       certificatesSlot={
+          <Suspense fallback={<RecentCertificatesSkeleton />}>
+            
+             <RecentCertificates tenant={tenant} />
+          </Suspense>
+       }
+       internshipsSlot={
+          <Suspense fallback={<RecentInternshipsSkeleton />}>
+             <RecentInternships tenant={tenant} />
+          </Suspense>
+       }
+    />
+  );
 }
