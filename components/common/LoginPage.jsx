@@ -21,7 +21,7 @@ import CustomButton from "@/components/common/CustomButton";
 export default function LoginPage({ tenantMeta }) {
   const router = useRouter();
   const { setUser } = useAuth();
-  
+
   const [activeRole, setActiveRole] = useState("student");
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,13 +53,27 @@ export default function LoginPage({ tenantMeta }) {
       // --- Real Login ---
       // This calls our Next.js Proxy -> which calls Django
       console.log(`Logging in user: ${formData.username} to tenant: ${tenant}`);
-      
-      await login(formData.username, formData.password, tenant);
+
+      const loginResponse = await login(formData.username, formData.password, tenant);
+
+      if (!loginResponse.success) {
+        throw new Error("Login failed");
+      }
+
+      // Wait a moment for cookies to be set properly
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // --- Fetch User Profile ---
-      const res = await fetch(`/api/auth/me?tenant=${tenant}`);
-      if (!res.ok) throw new Error("Could not retrieve user profile.");
-      
+      const res = await fetch(`/api/auth/me?tenant=${tenant}`, {
+        credentials: 'include' // Ensure cookies are sent
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Failed to fetch user profile:", errorData);
+        throw new Error(errorData.error || "Could not retrieve user profile.");
+      }
+
       const user = await res.json();
       console.log("Login Success:", user);
 
@@ -68,7 +82,7 @@ export default function LoginPage({ tenantMeta }) {
 
       // Normalize role
       const role = (user.role || user.user_type || "").toUpperCase();
-      
+
       // Refresh to ensure cookies are seen by server components
       router.refresh();
 
@@ -84,12 +98,12 @@ export default function LoginPage({ tenantMeta }) {
 
     } catch (err) {
       console.error("Login Flow Error:", err);
-      
+
       let msg = err.message || "Invalid credentials.";
-      
+
       // Helpful error message for Schema Mismatches
       if (msg.toLowerCase().includes("no active account") || msg.includes("401")) {
-         msg = `User not found in ${tenantMeta?.name || 'this college'}. Are you registered?`;
+        msg = `User not found in ${tenantMeta?.name || 'this college'}. Are you registered?`;
       }
 
       setErrors({ general: msg });
@@ -128,7 +142,7 @@ export default function LoginPage({ tenantMeta }) {
             <CardContent>
               {errors.general && (
                 <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded flex items-center gap-2">
-                   <span>⚠️ {errors.general}</span>
+                  <span>⚠️ {errors.general}</span>
                 </div>
               )}
 
@@ -157,9 +171,9 @@ export default function LoginPage({ tenantMeta }) {
                   required
                 />
 
-                <CustomButton 
-                  type="submit" 
-                  className="w-full" 
+                <CustomButton
+                  type="submit"
+                  className="w-full"
                   size="lg"
                   disabled={isSubmitting}
                 >
@@ -168,9 +182,9 @@ export default function LoginPage({ tenantMeta }) {
               </form>
             </CardContent>
             <CardFooter className="justify-center border-t p-4 bg-muted/50">
-               <p className="text-xs text-muted-foreground">
-                 Protected by EduTrack Security
-               </p>
+              <p className="text-xs text-muted-foreground">
+                Protected by EduTrack Security
+              </p>
             </CardFooter>
           </Card>
         </div>

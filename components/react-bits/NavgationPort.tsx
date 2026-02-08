@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { Menu, X, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const Navigation = () => {
+interface NavigationProps {
+  userName?: string;
+}
+
+const Navigation = ({ userName = "Developer" }: NavigationProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -35,8 +39,8 @@ const Navigation = () => {
       <nav className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
         <div className={cn(
           "px-6 py-3 rounded-full border border-white/20 transition-all duration-500 backdrop-blur-sm",
-          isScrolled 
-            ? "bg-black/80 shadow-2xl shadow-portfolio-accent/20" 
+          isScrolled
+            ? "bg-black/80 shadow-2xl shadow-portfolio-accent/20"
             : "bg-black/40"
         )}>
           <div className="flex items-center justify-between min-w-[300px] md:min-w-[400px]">
@@ -49,7 +53,7 @@ const Navigation = () => {
                 <Code className="w-4 h-4 text-portfolio-accent" />
               </div>
               <span className="text-white font-semibold group-hover:text-portfolio-accent transition-colors duration-300">
-                John Doe
+                {userName}
               </span>
             </button>
 

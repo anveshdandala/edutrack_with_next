@@ -13,7 +13,7 @@ export default async function StudentList({ tenant }) {
     });
 
     if (data === null) {
-        throw new Error("Could not fetch data.");
+      throw new Error("Could not fetch data.");
     }
 
     students = Array.isArray(data) ? data : data?.results || [];
@@ -21,6 +21,6 @@ export default async function StudentList({ tenant }) {
     console.error("Failed to fetch students:", error);
     errorMessage = "Failed to load student records. Please verify your connection or permissions.";
   }
-
+  // console.log(data)
   return <StudentClient initialStudents={students} initialError={errorMessage} />;
 }

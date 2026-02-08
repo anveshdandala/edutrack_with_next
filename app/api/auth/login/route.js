@@ -46,9 +46,11 @@ export async function POST(request) {
 
     // 4. Set HttpOnly Cookies
     const { access, refresh } = data;
-    
+
+
+
     const nextRes = NextResponse.json(
-      { success: true, user: data.user }, // Don't send tokens in body
+      { success: true }, // Just return success, frontend will fetch user profile
       { status: 200 }
     );
 
@@ -63,7 +65,7 @@ export async function POST(request) {
     // Set Access Token (e.g., 30 mins - match your Django settings)
     nextRes.cookies.set("accesstoken", access, {
       ...cookieDefaults,
-      maxAge: 60 * 30, 
+      maxAge: 60 * 30,
     });
 
     // Set Refresh Token (e.g., 7 days)
@@ -72,6 +74,7 @@ export async function POST(request) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
+    console.log(`[Proxy] Login successful, cookies set for tenant: ${tenant}`);
     return nextRes;
 
   } catch (error) {

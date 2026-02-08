@@ -6,8 +6,7 @@ import TiltedCard from "@/components/react-bits/TiltedCard";
 import LightRays from "@/components/react-bits/LightRays";
 import Navgation from "@/components/react-bits/NavgationPort";
 import SkillIcon from "@/components/react-bits/SkillIcon";
-// Adjusted relative import for public asset
-import GeminiImage from "../../../public/Gemini_Generated_Image_gf2jcmgf2jcmgf2j~2.jpg";
+
 import { useState, useEffect } from "react";
 import Dock from "@/components/react-bits/Dock";
 import {
@@ -37,9 +36,9 @@ import {
   VscSettingsGear,
 } from "react-icons/vsc";
 
-const AuroraDark = ({user}) => {
+const AuroraDark = ({ user }) => {
   const [hoveredSocial, setHoveredSocial] = useState(null);
-    console.log("[AuroraDark]",user);
+  console.log("[AuroraDark]", user);
   // State for dynamic data
   const [portfolioData, setPortfolioData] = useState(null);
   const [resumeData, setResumeData] = useState(null);
@@ -48,10 +47,10 @@ const AuroraDark = ({user}) => {
     if (typeof window !== "undefined") {
       // Load Portfolio Content
       const storedPortfolio = sessionStorage.getItem("ai_generated_portfolio");
-    
+
       if (storedPortfolio) {
         try {
-            console.log(storedPortfolio);
+          console.log(storedPortfolio);
           setPortfolioData(JSON.parse(storedPortfolio));
         } catch (e) {
           console.error("Failed to parse portfolio data", e);
@@ -60,18 +59,18 @@ const AuroraDark = ({user}) => {
 
       // Load Resume Content (Personal Details)
       const storedResume = sessionStorage.getItem("ai_generated_resume");
-        if (storedResume) {
+      if (storedResume) {
         try {
-            setResumeData(JSON.parse(storedResume));
-        } catch(e) {
-            console.error("Failed to parse resume data", e);
+          setResumeData(JSON.parse(storedResume));
+        } catch (e) {
+          console.error("Failed to parse resume data", e);
         }
       }
     }
   }, []);
 
   // --- Dynamic Data Mapping ---
-  
+
   // Personal Details
   const personName = resumeData?.name || (user?.first_name ? `${user.first_name} ${user.last_name}` : "Your Name");
   const personTitle = resumeData?.position || "Full Stack Developer";
@@ -80,67 +79,67 @@ const AuroraDark = ({user}) => {
 
   // Skills
   const skills = portfolioData?.skills?.map(s => typeof s === 'string' ? s : s.name) || ["React", "Next.js", "Python", "Node.js", "PostgreSQL", "Git"];
-  
+
   const skillsData = portfolioData?.skills?.map(s => ({
-      name: typeof s === 'string' ? s : s.name,
-      icon: "🔹" 
+    name: typeof s === 'string' ? s : s.name,
+    icon: "🔹"
   })) || [
-    { name: "React", icon: "⚛️" },
-    { name: "Next.js", icon: "⏭️" },
-    { name: "TypeScript", icon: "📘" },
-    { name: "Python", icon: "🐍" },
-    { name: "Node.js", icon: "🟢" },
-    { name: "PostgreSQL", icon: "🐘" },
-    { name: "Git", icon: "🔧" },
-    { name: "Docker", icon: "🐳" },
-    { name: "AWS", icon: "☁️" },
-    { name: "Tailwind CSS", icon: "🌊" },
-  ];
+      { name: "React", icon: "⚛️" },
+      { name: "Next.js", icon: "⏭️" },
+      { name: "TypeScript", icon: "📘" },
+      { name: "Python", icon: "🐍" },
+      { name: "Node.js", icon: "🟢" },
+      { name: "PostgreSQL", icon: "🐘" },
+      { name: "Git", icon: "🔧" },
+      { name: "Docker", icon: "🐳" },
+      { name: "AWS", icon: "☁️" },
+      { name: "Tailwind CSS", icon: "🌊" },
+    ];
 
   const items = [
-    { icon: <VscHome size={18} />, label: "Home", onClick: () => {} },
-    { icon: <VscArchive size={18} />, label: "Archive", onClick: () => {} },
-    { icon: <VscAccount size={18} />, label: "Profile", onClick: () => {} },
-    { icon: <VscSettingsGear size={18} />, label: "Settings", onClick: () => {} },
+    { icon: <VscHome size={18} />, label: "Home", onClick: () => { } },
+    { icon: <VscArchive size={18} />, label: "Archive", onClick: () => { } },
+    { icon: <VscAccount size={18} />, label: "Profile", onClick: () => { } },
+    { icon: <VscSettingsGear size={18} />, label: "Settings", onClick: () => { } },
   ];
 
   // Certifications
   const certificate = portfolioData?.certifications?.map(c => ({
-      title: c.name || "Certificate",
-      image: "https://blog.loopcv.pro/content/images/2022/10/coursera-certificate-copy.jpg", 
-      description: c.issuer || "Issued recently"
+    title: c.name || "Certificate",
+    image: "https://blog.loopcv.pro/content/images/2022/10/coursera-certificate-copy.jpg",
+    description: c.issuer || "Issued recently"
   })) || [];
 
   // Projects
   const projects = portfolioData?.projects?.map(p => ({
-      title: p.title,
-      description: p.description,
-      github: p.link || "",
-      preview: "/api/placeholder/400/250",
-      image: "https://images.klipfolio.com/website/public/bf9c6fbb-06bf-4f1d-88a7-d02b70902bd1/data-dashboard.png"
+    title: p.title,
+    description: p.description,
+    github: p.link || "",
+    preview: "/api/placeholder/400/250",
+    image: "https://images.klipfolio.com/website/public/bf9c6fbb-06bf-4f1d-88a7-d02b70902bd1/data-dashboard.png"
   })) || [];
 
   // Social Media Mapping
   // Resume data usually has { platform, url } or just url
   // We'll try to map it to our icons
   const mapSocialIcon = (url) => {
-      if(url.includes('github')) return Github;
-      if(url.includes('linkedin')) return Linkedin;
-      if(url.includes('twitter') || url.includes('x.com')) return Twitter; 
-      if(url.includes('instagram')) return "Instagram"; // Using string as placeholder if icon missing
-      return ExternalLink;
+    if (url.includes('github')) return Github;
+    if (url.includes('linkedin')) return Linkedin;
+    if (url.includes('twitter') || url.includes('x.com')) return Twitter;
+    if (url.includes('instagram')) return "Instagram"; // Using string as placeholder if icon missing
+    return ExternalLink;
   }
 
   const socialLinks = resumeData?.socialMedia?.map(s => ({
-      name: s.platform || "Social",
-      icon: mapSocialIcon(s.url || ""),
-      url: s.url,
-      color: "hover:bg-blue-600 hover:text-white", // Default color
-      bgColor: "bg-gray-900/20"
+    name: s.platform || "Social",
+    icon: mapSocialIcon(s.url || ""),
+    url: s.url,
+    color: "hover:bg-blue-600 hover:text-white", // Default color
+    bgColor: "bg-gray-900/20"
   })) || [
-    { name: "GitHub", icon: Github, url: "https://github.com/", color: "hover:bg-gray-800 hover:text-white", bgColor: "bg-gray-900/20" },
-    { name: "LinkedIn", icon: Linkedin, url: "https://linkedin.com/", color: "hover:bg-blue-600 hover:text-white", bgColor: "bg-blue-600/20" }
-  ];
+      { name: "GitHub", icon: Github, url: "https://github.com/", color: "hover:bg-gray-800 hover:text-white", bgColor: "bg-gray-900/20" },
+      { name: "LinkedIn", icon: Linkedin, url: "https://linkedin.com/", color: "hover:bg-blue-600 hover:text-white", bgColor: "bg-blue-600/20" }
+    ];
 
   // Stats
   const certCount = certificate.length || 0;
@@ -161,7 +160,7 @@ const AuroraDark = ({user}) => {
         </div>
         <div className="absolute inset-0 bg-gradient-to-br from-portfolio-muted/90 to-portfolio-secondary/90"></div>
         <div className="relative z-20">
-          <Navgation />
+          <Navgation userName={personName} />
 
           {/* Hero Section */}
           <section className="relative z-10 container mx-auto px-6 py-32 min-h-screen flex items-center">
@@ -189,7 +188,7 @@ const AuroraDark = ({user}) => {
 
               <div className="w-full lg:w-1/2 flex justify-center lg:justify-end">
                 <TiltedCard
-                  imageSrc={GeminiImage.src}
+                  imageSrc="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=300&h=300&fit=crop"
                   altText={`${personName} portfolio`}
                   captionText={`${personName} - Dev`}
                   containerHeight="300px"
@@ -294,7 +293,7 @@ const AuroraDark = ({user}) => {
                   Skills
                 </TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="projects">
                 <div className="grid md:grid-cols-3 gap-8">
                   {projects.map((project, index) => (
@@ -319,11 +318,11 @@ const AuroraDark = ({user}) => {
                           {project.description}
                         </CardDescription>
                         {project.github && (
-                            <Link href={project.github} target="_blank">
-                                <Button variant="outline" className="w-full border-gray-600 bg-gray-700 text-gray-200 hover:bg-gray-600 hover:text-white">
-                                <Github className="w-4 h-4 mr-2" /> View on GitHub
-                                </Button>
-                            </Link>
+                          <Link href={project.github} target="_blank">
+                            <Button variant="outline" className="w-full border-gray-600 bg-gray-700 text-gray-200 hover:bg-gray-600 hover:text-white">
+                              <Github className="w-4 h-4 mr-2" /> View on GitHub
+                            </Button>
+                          </Link>
                         )}
                       </CardContent>
                     </Card>
@@ -347,7 +346,7 @@ const AuroraDark = ({user}) => {
                           />
                         </div>
                         <div className="p-6">
-                            <h3 className="text-lg font-semibold text-white mb-1">{cert.title}</h3>
+                          <h3 className="text-lg font-semibold text-white mb-1">{cert.title}</h3>
                           <p className="text-gray-300 text-center min-h-[48px]">
                             {cert.description}
                           </p>
@@ -404,20 +403,19 @@ const AuroraDark = ({user}) => {
                       onMouseLeave={() => setHoveredSocial(null)}
                     >
                       <div className="flex flex-col items-center space-y-3">
-                         {/* Check if IconComponent is a function or string */}
+                        {/* Check if IconComponent is a function or string */}
                         {typeof IconComponent === 'function' || typeof IconComponent === 'object' ? (
-                             <IconComponent
-                             size={32}
-                             className={`transition-all duration-300 ${
-                               hoveredSocial === social.name
-                                 ? "scale-110 rotate-12"
-                                 : ""
-                             } text-gray-300 group-hover:text-white`}
-                           />
+                          <IconComponent
+                            size={32}
+                            className={`transition-all duration-300 ${hoveredSocial === social.name
+                              ? "scale-110 rotate-12"
+                              : ""
+                              } text-gray-300 group-hover:text-white`}
+                          />
                         ) : (
-                            <span className="text-2xl">{IconComponent}</span>
+                          <span className="text-2xl">{IconComponent}</span>
                         )}
-                       
+
                         <span className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors">
                           {social.name}
                         </span>

@@ -23,6 +23,10 @@ export async function GET(request) {
     const cleanBase = API_BASE.replace(/\/$/, "");
     const url = `${cleanBase}/api/${tenant}/auth/users/me/`;
 
+    console.log(`[/api/auth/me] Fetching user from: ${url}`);
+    console.log(`[/api/auth/me] Token found: ${token ? 'YES' : 'NO'}`);
+    console.log(`[/api/auth/me] Token prefix: ${token?.substring(0, 20)}...`);
+
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -32,13 +36,22 @@ export async function GET(request) {
     });
 
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`[/api/auth/me] Django returned ${res.status}:`, errorText);
+      console.error(`[/api/auth/me] Response headers:`, Object.fromEntries(res.headers.entries()));
+
       return NextResponse.json(
-        { error: "Failed to fetch user" },
+        {
+          error: "Failed to fetch user",
+          details: errorText,
+          status: res.status
+        },
         { status: res.status }
       );
     }
 
     const user = await res.json();
+    console.log(`[/api/auth/me] User fetched successfully:`, user);
     return NextResponse.json(user, { status: 200 });
 
   } catch (error) {
