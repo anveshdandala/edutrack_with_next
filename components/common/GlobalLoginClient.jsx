@@ -2,17 +2,23 @@
 "use client";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronsUpDown, Building2, Loader2, Search } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  Building2,
+  Loader2,
+  Search,
+} from "lucide-react";
 
 export default function GlobalLoginClient({ colleges = [] }) {
   const router = useRouter();
-  
+
   // State
   const [open, setOpen] = useState(false);
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   // Refs for click outside
   const dropdownRef = useRef(null);
 
@@ -20,7 +26,7 @@ export default function GlobalLoginClient({ colleges = [] }) {
   const filteredColleges = useMemo(() => {
     if (!searchQuery) return colleges;
     return colleges.filter((college) =>
-      college.name.toLowerCase().includes(searchQuery.toLowerCase())
+      college.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [colleges, searchQuery]);
 
@@ -62,7 +68,6 @@ export default function GlobalLoginClient({ colleges = [] }) {
   return (
     <div className="min-h-screen bg-gray-50/50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-        
         {/* Header Section */}
         <div className="px-8 pt-10 pb-6 text-center">
           <div className="mx-auto bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 text-blue-600">
@@ -78,22 +83,23 @@ export default function GlobalLoginClient({ colleges = [] }) {
 
         {/* Form Section */}
         <div className="px-8 pb-10 space-y-4">
-          
           <div className="relative" ref={dropdownRef}>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">
               Select Institution
             </label>
-            
+
             {/* The Trigger Button */}
             <button
               onClick={() => setOpen(!open)}
               className={`w-full flex items-center justify-between px-4 py-3 text-left border rounded-xl transition-all duration-200 outline-none
-                ${open ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-gray-200 hover:border-gray-300'}
-                ${!selectedCollege ? 'text-gray-500' : 'text-gray-900 font-medium'}
+                ${open ? "border-blue-500 ring-2 ring-blue-500/10" : "border-gray-200 hover:border-gray-300"}
+                ${!selectedCollege ? "text-gray-500" : "text-gray-900 font-medium"}
               `}
             >
               <span className="truncate">
-                {selectedCollege ? selectedCollege.name : "Search for your college..."}
+                {selectedCollege
+                  ? selectedCollege.name
+                  : "Search for your college..."}
               </span>
               <ChevronsUpDown className="w-4 h-4 text-gray-400 opacity-50 ml-2 flex-shrink-0" />
             </button>
@@ -129,15 +135,19 @@ export default function GlobalLoginClient({ colleges = [] }) {
                           setSearchQuery("");
                         }}
                         className={`w-full flex items-center px-3 py-2.5 text-sm rounded-lg transition-colors
-                          ${selectedCollege?.id === college.id ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700'}
+                          ${selectedCollege?.id === college.id ? "bg-blue-50 text-blue-700" : "hover:bg-gray-50 text-gray-700"}
                         `}
                       >
                         <Check
                           className={`mr-2 h-4 w-4 transition-opacity ${
-                            selectedCollege?.id === college.id ? "opacity-100" : "opacity-0"
+                            selectedCollege?.id === college.id
+                              ? "opacity-100"
+                              : "opacity-0"
                           }`}
                         />
-                        <span className="truncate text-left">{college.name}</span>
+                        <span className="truncate text-left">
+                          {college.name}
+                        </span>
                       </button>
                     ))
                   )}
@@ -151,9 +161,10 @@ export default function GlobalLoginClient({ colleges = [] }) {
             onClick={handleSelect}
             disabled={!selectedCollege || loading}
             className={`w-full flex items-center justify-center py-3.5 px-4 rounded-xl text-sm font-semibold text-white transition-all duration-200
-              ${!selectedCollege || loading 
-                ? 'bg-gray-300 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 active:scale-[0.98]'
+              ${
+                !selectedCollege || loading
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 active:scale-[0.98]"
               }
             `}
           >
@@ -166,9 +177,8 @@ export default function GlobalLoginClient({ colleges = [] }) {
               "Continue to Portal"
             )}
           </button>
-
         </div>
-        
+
         {/* Footer decoration */}
         <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
           <p className="text-xs text-gray-400">
