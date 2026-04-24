@@ -34,8 +34,7 @@ export function AuthProvider({ children, initialUser }) {
     // Refresh server components to ensure cookies are gone on server too
     router.refresh();
 
-    // Redirect to a safe public page (e.g., global login)
-    router.push("/globalLogin");
+    router.push("/auth/login");
   };
 
   return (

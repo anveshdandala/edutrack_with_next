@@ -1,5 +1,5 @@
-// middleware.js
 import { NextResponse } from "next/server";
+import { getTenantFromHost } from "@/lib/tenant";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
 
@@ -12,7 +12,7 @@ function isTokenExpired(token) {
     const decoded = JSON.parse(atob(payload));
     if (!decoded.exp) return false;
     // Buffer of 10s to be safe
-    return decoded.exp * 1000 < Date.now() + 10000; 
+    return decoded.exp * 1000 < Date.now() + 10000;
   } catch (e) {
     return true;
   }
@@ -20,16 +20,21 @@ function isTokenExpired(token) {
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+  const tenant = getTenantFromHost(request.headers.get("host"));
+  const requestHeaders = new Headers(request.headers);
 
-  const pathParts = pathname.split("/");
-  const tenant = pathParts[1];
+  if (tenant) {
+    requestHeaders.set("x-tenant", tenant);
+  } else {
+    requestHeaders.delete("x-tenant");
+  }
 
   const accessToken = request.cookies.get("accesstoken")?.value;
   const refreshToken = request.cookies.get("refreshtoken")?.value;
 
   // 1. Check if we have a VALID access token
   if (accessToken && !isTokenExpired(accessToken)) {
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // 2. If no valid access token, but we have refresh token -> Refresh
@@ -73,16 +78,15 @@ export async function middleware(request) {
   }
 
   const isProtected =
-    pathname.includes("/institution") ||
     pathname.includes("/student") ||
     pathname.includes("/admin") ||
     pathname.includes("/faculty");
 
   if (isProtected) {
-    return NextResponse.redirect(new URL("/globalLogin", request.url));
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
@@ -93,8 +97,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - globalLogin (public page)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|globalLogin).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

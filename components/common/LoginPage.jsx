@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { login } from "@/lib/auth.js";
 import { useAuth } from "@/components/AuthProvider";
+import { useTenant } from "@/components/tenant/TenantProvider";
 import {
   Card,
   CardContent,
@@ -18,17 +19,17 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InputField from "@/components/common/InputField";
 import CustomButton from "@/components/common/CustomButton";
 
-export default function LoginPage({ tenantMeta }) {
+export default function LoginPage({ tenant, tenantMeta }) {
   const router = useRouter();
   const { setUser } = useAuth();
+  const contextTenant = useTenant();
   
   const [activeRole, setActiveRole] = useState("student");
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 1. Safely resolve the tenant slug
-  const tenant = tenantMeta?.schema_name || "public";
+  const activeTenant = tenant || contextTenant;
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -46,18 +47,22 @@ export default function LoginPage({ tenantMeta }) {
         await new Promise((r) => setTimeout(r, 800));
         const mockRecruiter = { id: "rec-1", username: formData.username, role: "RECRUITER" };
         if (setUser) setUser(mockRecruiter);
-        router.push(`/${tenant}/rec`);
+        router.push("/auth/login");
         return;
       }
 
       // --- Real Login ---
       // This calls our Next.js Proxy -> which calls Django
-      console.log(`Logging in user: ${formData.username} to tenant: ${tenant}`);
+      if (!activeTenant) {
+        throw new Error("No tenant found. Use a tenant subdomain like tce.localhost:3000.");
+      }
+
+      console.log(`Logging in user: ${formData.username} to tenant: ${activeTenant}`);
       
-      await login(formData.username, formData.password, tenant);
+      await login(formData.username, formData.password, activeTenant);
 
       // --- Fetch User Profile ---
-      const res = await fetch(`/api/auth/me?tenant=${tenant}`);
+      const res = await fetch("/api/auth/me");
       if (!res.ok) throw new Error("Could not retrieve user profile.");
       
       const user = await res.json();
@@ -66,21 +71,10 @@ export default function LoginPage({ tenantMeta }) {
       // --- Update Context & Redirect ---
       if (setUser) setUser(user);
 
-      // Normalize role
-      const role = (user.role || user.user_type || "").toUpperCase();
-      
       // Refresh to ensure cookies are seen by server components
       router.refresh();
 
-      // Intelligent Redirect
-      if (role === "STUDENT") router.push(`/${tenant}/student`);
-      else if (["FACULTY", "HOD"].includes(role)) router.push(`/${tenant}/faculty`);
-      else if (["ADMIN", "INSTITUTION"].includes(role)) router.push(`/${tenant}/admin`);
-      else {
-        // Fallback for unknown roles
-        console.warn("Unknown role:", role);
-        router.push(`/${tenant}/dashboard`);
-      }
+      router.push("/auth/login");
 
     } catch (err) {
       console.error("Login Flow Error:", err);
@@ -89,7 +83,7 @@ export default function LoginPage({ tenantMeta }) {
       
       // Helpful error message for Schema Mismatches
       if (msg.toLowerCase().includes("no active account") || msg.includes("401")) {
-         msg = `User not found in ${tenantMeta?.name || 'this college'}. Are you registered?`;
+         msg = `User not found in ${tenantMeta?.name || activeTenant || "this college"}. Are you registered?`;
       }
 
       setErrors({ general: msg });
@@ -118,6 +112,12 @@ export default function LoginPage({ tenantMeta }) {
             </div>
           )}
 
+          {!tenantMeta && activeTenant && (
+            <div className="text-center mb-6">
+              <h2 className="font-bold text-xl">{activeTenant}</h2>
+            </div>
+          )}
+
           <Card className="shadow-lg">
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-2xl">Sign In</CardTitle>
@@ -128,7 +128,7 @@ export default function LoginPage({ tenantMeta }) {
             <CardContent>
               {errors.general && (
                 <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded flex items-center gap-2">
-                   <span>⚠️ {errors.general}</span>
+                   <span>{errors.general}</span>
                 </div>
               )}
 

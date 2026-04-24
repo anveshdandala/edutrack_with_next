@@ -13,6 +13,7 @@ import {
 import InputField from "@/components/common/InputField";
 import CustomButton from "@/components/common/CustomButton";
 import { ArrowLeft } from "lucide-react";
+import { buildTenantLoginUrl } from "@/lib/tenant";
 
 export default function Signup() {
   const router = useRouter();
@@ -31,15 +32,6 @@ export default function Signup() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Helper to generate slug from name (e.g., "Harvard University" -> "harvard")
-  const handleNameChange = (name) => {
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "")
-      .slice(0, 20);
-    setFormData((prev) => ({ ...prev, college_name: name, slug: slug }));
-  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => {
@@ -107,14 +99,17 @@ export default function Signup() {
         console.error("Server rejected request:", data);
         // Display specific errors if they exist
         const errorMsg = Object.entries(data)
-          .map(([field, msgs]) => `${field}: ${msgs.join(", ")}`)
+          .map(([field, msgs]) => {
+            const message = Array.isArray(msgs) ? msgs.join(", ") : String(msgs);
+            return `${field}: ${message}`;
+          })
           .join("\n");
         alert(`Registration failed:\n${errorMsg}`);
       } else {
         alert(
           "Institution registered successfully! Check email for activation.",
         );
-        router.push("/auth/login");
+        router.push(buildTenantLoginUrl(formData.slug));
       }
     } catch (error) {
       console.error("Network Error:", error);
