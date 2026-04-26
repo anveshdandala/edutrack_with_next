@@ -1,84 +1,72 @@
+import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { buildTenantApiUrl } from "@/lib/tenant";
 
-// Fallback to localhost if env var is missing
-const API_BASE = process.env.API_URL || "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
 export async function POST(request) {
   try {
+    // 2. Parse Body safely
     const body = await request.json();
     const { username, password, tenant } = body;
 
-    // 1. Validate Input
     if (!username || !password || !tenant) {
       return NextResponse.json(
         { error: "Missing credentials or tenant ID" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // 2. Prepare Django URL (Ensure strict trailing slash)
-    const cleanBase = API_BASE.replace(/\/$/, "");
-    const targetUrl = `${cleanBase}/api/${tenant}/auth/jwt/create/`;
-
-    console.log(`[Proxy] Attempting login at: ${targetUrl}`);
-
     // 3. Call Django Backend
-    const res = await fetch(targetUrl, {
+    const targetUrl = buildTenantApiUrl(API_BASE, tenant, "/auth/jwt/create/");
+
+    const djangoRes = await fetch(targetUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // "Host": `${tenant}.localhost`, // Uncomment if using subdomain routing locally
+        "x-tenant": tenant,
       },
       body: JSON.stringify({ username, password }),
-      cache: "no-store",
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error(`[Proxy] Login Failed (${res.status}):`, data);
-      // Forward the specific error from Django
-      return NextResponse.json(
-        { error: data.detail || "Invalid credentials" },
-        { status: res.status }
-      );
+    if (!djangoRes.ok) {
+      // Forward the exact error from Django (e.g., "No active account found")
+      const errorData = await djangoRes.json();
+      return NextResponse.json(errorData, { status: djangoRes.status });
     }
 
-    // 4. Set HttpOnly Cookies
-    const { access, refresh } = data;
-    
-    const nextRes = NextResponse.json(
-      { success: true, user: data.user }, // Don't send tokens in body
-      { status: 200 }
-    );
+    const { access, refresh } = await djangoRes.json();
+    const cookieStore = await cookies();
 
-    const isProduction = process.env.NODE_ENV === "production";
-    const cookieDefaults = {
+    // 4. Set Cookies
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieOptions = {
       httpOnly: true,
-      path: "/",
+      secure: isProd,
       sameSite: "lax",
-      secure: isProduction,
+      path: "/",
     };
 
-    // Set Access Token (e.g., 30 mins - match your Django settings)
-    nextRes.cookies.set("accesstoken", access, {
-      ...cookieDefaults,
-      maxAge: 60 * 30, 
+    cookieStore.set("tenant", tenant, {
+      ...cookieOptions,
+      maxAge: 60 * 60 * 24 * 7,
     });
-
-    // Set Refresh Token (e.g., 7 days)
-    nextRes.cookies.set("refreshtoken", refresh, {
-      ...cookieDefaults,
+    cookieStore.set("accesstoken", access, {
+      ...cookieOptions,
+      maxAge: 60 * 60,
+    });
+    cookieStore.set("refreshtoken", refresh, {
+      ...cookieOptions,
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    return nextRes;
-
-  } catch (error) {
-    console.error("[Proxy] Critical Error:", error);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    // This catches JSON parsing errors or fetch failures
+    console.error("[Login Proxy Error]:", err.message);
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      { error: "Authentication service unavailable" },
+      { status: 500 },
     );
   }
 }

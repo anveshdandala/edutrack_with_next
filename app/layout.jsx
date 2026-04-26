@@ -3,12 +3,13 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { serverFetch } from "@/lib/server-api"; // Note: Ensure name matches your lib file
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { TenantProvider } from "@/components/tenant/TenantProvider";
 
 export default async function RootLayout({ children }) {
   const cookieStore = await cookies();
   const headersList = await headers();
-  const tenant = headersList.get("x-tenant");
+  const tenant = headersList.get("x-tenant") || cookieStore.get("tenant")?.value;
   const token = cookieStore.get("accesstoken")?.value;
 
   let user = null;
@@ -25,11 +26,13 @@ export default async function RootLayout({ children }) {
   }
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <TenantProvider tenant={tenant}>
-          <AuthProvider initialUser={user}>{children}</AuthProvider>
-        </TenantProvider>
+        <ThemeProvider>
+          <TenantProvider tenant={tenant}>
+            <AuthProvider initialUser={user}>{children}</AuthProvider>
+          </TenantProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

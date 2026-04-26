@@ -4,89 +4,92 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { login } from "@/lib/auth.js";
 import { useAuth } from "@/components/AuthProvider";
 import { useTenant } from "@/components/tenant/TenantProvider";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InputField from "@/components/common/InputField";
 import CustomButton from "@/components/common/CustomButton";
 
-export default function LoginPage({ tenant, tenantMeta }) {
+const ROLE_REDIRECTS = {
+  STUDENT: "/student",
+  FACULTY: "/faculty/dashboard",
+  ADMIN: "/institution/dashboard",
+  INSTITUTION: "/institution/dashboard",
+  RECRUITER: "/recruiter/dashboard",
+};
+
+function getInstitutionTenant(institution) {
+  return institution?.slug || institution?.schema_name || institution?.tenant;
+}
+
+function getInstitutionName(institution) {
+  return (
+    institution?.name ||
+    institution?.college_name ||
+    institution?.institution_name ||
+    getInstitutionTenant(institution)
+  );
+}
+
+export default function LoginPage({ institutions = [], tenantMeta }) {
   const router = useRouter();
   const { setUser } = useAuth();
-  const contextTenant = useTenant();
-  
+  const tenant = useTenant();
+
   const [activeRole, setActiveRole] = useState("student");
   const [formData, setFormData] = useState({ username: "", password: "" });
+  const [selectedTenant, setSelectedTenant] = useState(tenant || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
-
-  const activeTenant = tenant || contextTenant;
-
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors.general) setErrors({});
-  };
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({});
+    setError(null);
     setIsSubmitting(true);
 
     try {
-      // --- Recruiter Bypass (Mock) ---
-      if (activeRole === "recruiter") {
-        await new Promise((r) => setTimeout(r, 800));
-        const mockRecruiter = { id: "rec-1", username: formData.username, role: "RECRUITER" };
-        if (setUser) setUser(mockRecruiter);
-        router.push("/auth/login");
-        return;
+      const loginTenant = selectedTenant;
+
+      if (!loginTenant) {
+        throw new Error("Please select your college before logging in.");
       }
 
-      // --- Real Login ---
-      // This calls our Next.js Proxy -> which calls Django
-      if (!activeTenant) {
-        throw new Error("No tenant found. Use a tenant subdomain like tce.localhost:3000.");
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-tenant": loginTenant,
+        },
+        body: JSON.stringify({
+          tenant: loginTenant,
+          username: formData.username,
+          password: formData.password,
+        }),
+      });
+
+      if (!loginRes.ok) {
+        const data = await loginRes.json();
+        throw new Error(data?.detail || data?.error || "Invalid credentials.");
       }
 
-      console.log(`Logging in user: ${formData.username} to tenant: ${activeTenant}`);
-      
-      await login(formData.username, formData.password, activeTenant);
+      const meRes = await fetch("/api/auth/me", {
+        headers: { "x-tenant": loginTenant },
+      });
+      if (!meRes.ok) throw new Error("Could not retrieve user profile.");
 
-      // --- Fetch User Profile ---
-      const res = await fetch("/api/auth/me");
-      if (!res.ok) throw new Error("Could not retrieve user profile.");
-      
-      const user = await res.json();
-      console.log("Login Success:", user);
-
-      // --- Update Context & Redirect ---
-      if (setUser) setUser(user);
-
-      // Refresh to ensure cookies are seen by server components
-      router.refresh();
-
-      router.push("/auth/login");
-
+      const user = await meRes.json();
+      setUser(user);
+      router.push(ROLE_REDIRECTS[user.role] || "/auth/login");
     } catch (err) {
-      console.error("Login Flow Error:", err);
-      
-      let msg = err.message || "Invalid credentials.";
-      
-      // Helpful error message for Schema Mismatches
-      if (msg.toLowerCase().includes("no active account") || msg.includes("401")) {
-         msg = `User not found in ${tenantMeta?.name || activeTenant || "this college"}. Are you registered?`;
-      }
-
-      setErrors({ general: msg });
+      setError(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -95,28 +98,27 @@ export default function LoginPage({ tenant, tenantMeta }) {
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="container mx-auto px-4">
-        <Link href="/">
+        <Link
+          href={process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}
+        >
           <button className="flex items-center gap-2 text-primary hover:underline mb-8">
             <ArrowLeft className="h-4 w-4" /> Change College
           </button>
         </Link>
 
         <div className="max-w-md mx-auto">
-          {/* Tenant Logo/Name Header */}
-          {tenantMeta && (
-            <div className="text-center mb-6">
-              {tenantMeta.logo_url && (
-                <img src={tenantMeta.logo_url} alt="Logo" className="mx-auto h-12 mb-2" />
-              )}
-              <h2 className="font-bold text-xl">{tenantMeta.name}</h2>
-            </div>
-          )}
-
-          {!tenantMeta && activeTenant && (
-            <div className="text-center mb-6">
-              <h2 className="font-bold text-xl">{activeTenant}</h2>
-            </div>
-          )}
+          {/* <div className="text-center mb-6">
+            {tenantMeta?.logo_url && (
+              <img
+                src={tenantMeta.logo_url}
+                alt="Logo"
+                className="mx-auto h-12 mb-2"
+              />
+            )}
+            <h2 className="font-bold text-xl">
+              {tenantMeta?.name || tenant || "EduTrack"}
+            </h2>
+          </div> */}
 
           <Card className="shadow-lg">
             <CardHeader className="space-y-1 text-center">
@@ -125,52 +127,91 @@ export default function LoginPage({ tenant, tenantMeta }) {
                 Access your {activeRole} account
               </CardDescription>
             </CardHeader>
+
             <CardContent>
-              {errors.general && (
-                <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded flex items-center gap-2">
-                   <span>{errors.general}</span>
+              {error && (
+                <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded">
+                  {error}
                 </div>
               )}
 
-              <Tabs value={activeRole} onValueChange={setActiveRole} className="w-full mb-6">
+              <Tabs
+                value={activeRole}
+                onValueChange={setActiveRole}
+                className="w-full mb-6"
+              >
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="student">Student</TabsTrigger>
                   <TabsTrigger value="faculty">Faculty</TabsTrigger>
-                  <TabsTrigger value="institution">Inst.</TabsTrigger>
+                  <TabsTrigger value="institution">admin</TabsTrigger>
                   <TabsTrigger value="recruiter">Recr.</TabsTrigger>
                 </TabsList>
               </Tabs>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {institutions.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">College</label>
+                    <select
+                      value={selectedTenant}
+                      onChange={(e) => setSelectedTenant(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      required
+                    >
+                      <option value="">Select your college</option>
+                      {institutions.map((institution) => {
+                        const value = getInstitutionTenant(institution);
+
+                        if (!value) return null;
+
+                        return (
+                          <option key={value} value={value}>
+                            {getInstitutionName(institution)}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
+
                 <InputField
                   label="Username"
                   placeholder="Enter your ID"
                   value={formData.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, username: e.target.value }))
+                  }
                   required
                 />
                 <InputField
                   label="Password"
                   type="password"
                   value={formData.password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, password: e.target.value }))
+                  }
                   required
                 />
 
-                <CustomButton 
-                  type="submit" 
-                  className="w-full" 
+                <CustomButton
+                  type="submit"
+                  className="w-full"
                   size="lg"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Sign In"}
+                  {isSubmitting ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    "Sign In"
+                  )}
                 </CustomButton>
               </form>
             </CardContent>
+
             <CardFooter className="justify-center border-t p-4 bg-muted/50">
-               <p className="text-xs text-muted-foreground">
-                 Protected by EduTrack Security
-               </p>
+              <p className="text-xs text-muted-foreground">
+                Protected by EduTrack Security
+              </p>
             </CardFooter>
           </Card>
         </div>

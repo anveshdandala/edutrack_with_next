@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { getTenantFromHost } from "@/lib/tenant";
+import { buildTenantApiUrl, getTenantFromHost } from "@/lib/tenant";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:8000";
 
 // Helper to check if JWT is expired
 function isTokenExpired(token) {
@@ -20,7 +23,9 @@ function isTokenExpired(token) {
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
-  const tenant = getTenantFromHost(request.headers.get("host"));
+  const tenant =
+    getTenantFromHost(request.headers.get("host")) ||
+    request.cookies.get("tenant")?.value;
   const requestHeaders = new Headers(request.headers);
 
   if (tenant) {
@@ -42,8 +47,11 @@ export async function middleware(request) {
     console.log(`[Middleware] Access expired for ${tenant}. Refreshing...`);
 
     try {
-
-      const refreshUrl = `${API_BASE}/api/${tenant}/auth/jwt/refresh/`;
+      const refreshUrl = buildTenantApiUrl(
+        API_BASE,
+        tenant,
+        "/auth/jwt/refresh/",
+      );
 
       const res = await fetch(refreshUrl, {
         method: "POST",
@@ -69,7 +77,7 @@ export async function middleware(request) {
         return response;
       } else {
         console.error(
-          "[Middleware] Refresh failed (401/400). Token likely invalid."
+          "[Middleware] Refresh failed (401/400). Token likely invalid.",
         );
       }
     } catch (error) {
@@ -80,7 +88,8 @@ export async function middleware(request) {
   const isProtected =
     pathname.includes("/student") ||
     pathname.includes("/admin") ||
-    pathname.includes("/faculty");
+    pathname.includes("/faculty") ||
+    pathname.includes("/institution");
 
   if (isProtected) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
@@ -90,14 +99,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|globalLogin).*)"],
 };

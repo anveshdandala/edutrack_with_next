@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { headers } from "next/headers";
-import { getTenantFromHost } from "@/lib/tenant";
+import { buildTenantApiUrl, getTenantFromHost } from "@/lib/tenant";
 
-const API_BASE = process.env.API_URL || "http://127.0.0.1:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:8000";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -15,15 +18,16 @@ export async function GET() {
 
   const headersList = await headers();
   const tenant =
-    headersList.get("x-tenant") || getTenantFromHost(headersList.get("host"));
+    headersList.get("x-tenant") ||
+    cookieStore.get("tenant")?.value ||
+    getTenantFromHost(headersList.get("host"));
 
   if (!tenant) {
     return NextResponse.json({ error: "Tenant ID required" }, { status: 400 });
   }
 
   try {
-    const cleanBase = API_BASE.replace(/\/$/, "");
-    const url = `${cleanBase}/api/${tenant}/auth/users/me/`;
+    const url = buildTenantApiUrl(API_BASE, tenant, "/auth/users/me/");
 
     const res = await fetch(url, {
       headers: {
@@ -36,13 +40,12 @@ export async function GET() {
     if (!res.ok) {
       return NextResponse.json(
         { error: "Failed to fetch user" },
-        { status: res.status }
+        { status: res.status },
       );
     }
 
     const user = await res.json();
     return NextResponse.json(user, { status: 200 });
-
   } catch (error) {
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
