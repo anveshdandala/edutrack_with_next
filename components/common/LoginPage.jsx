@@ -49,6 +49,7 @@ export default function LoginPage({ institutions = [], tenantMeta }) {
   const [selectedTenant, setSelectedTenant] = useState(tenant || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const clientUrlHost = process.env.NEXT_PUBLIC_APP_HOST || "localhost:3000";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,7 +67,6 @@ export default function LoginPage({ institutions = [], tenantMeta }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-tenant": loginTenant,
         },
         body: JSON.stringify({
           tenant: loginTenant,
@@ -87,7 +87,9 @@ export default function LoginPage({ institutions = [], tenantMeta }) {
 
       const user = await meRes.json();
       setUser(user);
-      router.push(ROLE_REDIRECTS[user.role] || "/auth/login");
+      const redirect = ROLE_REDIRECTS[user.role] || "/auth/login";
+      window.location.href = `http://${loginTenant}.${clientUrlHost}${redirect}`;
+
     } catch (err) {
       setError(err.message);
     } finally {

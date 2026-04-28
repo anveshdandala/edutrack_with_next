@@ -7,38 +7,31 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:8000";
 
-export async function POST(request) {
-  const body = await request.json();
+function resolveTenant(headersList, cookieStore) {
+  return (
+    headersList.get("x-tenant") || getTenantFromHost(headersList.get("host"))
+  );
+}
+
+export async function GET(request) {
   const headersList = await headers();
-  const tenant =
-    headersList.get("x-tenant") ||
-    getTenantFromHost(headersList.get("host"));
+  const cookieStore = await cookies();
+  const token = cookieStore.get("accesstoken")?.value;
+  const tenant = resolveTenant(headersList, cookieStore);
 
   if (!tenant) {
     return NextResponse.json({ error: "Tenant required" }, { status: 400 });
   }
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("accesstoken")?.value;
-
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const targetUrl = buildTenantApiUrl(
-    API_BASE,
-    tenant,
-    "/administration/departments/",
-  );
-
-  const res = await fetch(targetUrl, {
-    method: "POST",
+  const res = await fetch(buildTenantApiUrl(API_BASE, tenant, "/resume/student/data/"), {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      "x-tenant": tenant,
     },
-    body: JSON.stringify(body),
     cache: "no-store",
   });
 
