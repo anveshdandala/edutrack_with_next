@@ -7,7 +7,7 @@ import CertificateClientWrapper from "./certificate-client-wrapper";
 import CertificateList from "./certificate-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { tenantPath } from "@/lib/routes";
+import StudentShell from "@/components/student/StudentShell";
 
 export default async function CertificatesPage() {
   const cookieStore = await cookies();
@@ -15,34 +15,32 @@ export default async function CertificatesPage() {
   const tenant = headersList.get("x-tenant") || cookieStore.get("tenant")?.value;
 
   return (
-    <div className="min-h-screen bg-muted/30 text-foreground">
-      <main className="mx-auto min-h-screen w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <Navigation tenant={tenant} />
-        <Header tenant={tenant} />
+    <StudentShell>
+      <Navigation />
+      <Header tenant={tenant} />
 
-        <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Upload New</h2>
-            <Suspense fallback={<UploadSkeleton />}>
-              <CertificateClientWrapper tenant={tenant} />
-            </Suspense>
-          </div>
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">Upload New</h2>
+          <Suspense fallback={<UploadSkeleton />}>
+            <CertificateClientWrapper tenant={tenant} />
+          </Suspense>
+        </section>
 
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Your Certificates</h2>
-            <CertificateList tenant={tenant} />
-          </div>
-        </div>
-      </main>
-    </div>
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">Your Certificates</h2>
+          <CertificateList tenant={tenant} />
+        </section>
+      </div>
+    </StudentShell>
   );
 }
 
 // --- Helper Components to reduce code duplication ---
 
-function Navigation({ tenant }) {
+function Navigation() {
   return (
-    <Link href={tenantPath(tenant, "/student")}>
+    <Link href="/student">
       <Button variant="ghost" className="mb-6 pl-0 hover:pl-2 transition-all">
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Dashboard

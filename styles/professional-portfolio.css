@@ -1,0 +1,135 @@
+/* Professional Portfolio Styles */
+html {
+  scroll-behavior: smooth;
+}
+
+.prof-port {
+  position: relative;
+  min-height: 100vh;
+}
+
+.emp-section {
+  background: linear-gradient(#000, #0f0f23);
+  position: relative;
+}
+
+.section-3 {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+}
+
+.skills-flex {
+  margin-top: 2rem;
+}
+
+.each-skill {
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.each-skill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.15);
+}
+
+.tabs-bar {
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.indi-tabs {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.indi-tabs:hover {
+  transform: translateY(-1px);
+}
+
+.tilted-card-demo-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.custom-rays {
+  pointer-events: none;
+}
+
+/* Animation utilities */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .prof-port {
+    padding: 1rem;
+  }
+
+  .tabs-bar {
+    flex-direction: column;
+    height: auto;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .indi-tabs {
+    width: 100%;
+    padding: 0.75rem;
+  }
+}
+
+/* Enhanced card hover effects */
+.card-hover-effect {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Improved text readability */
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.backdrop-blur-strong {
+  backdrop-filter: blur(20px);
+}
+
+.portfolio-nav {
+  display: flex;
+  flex-direction: row;
+}
+.nav-buttons {
+  border: 1px solid white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+.nav-buttons:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

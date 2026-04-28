@@ -24,6 +24,8 @@ import {
   User,
   X,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 import { useTheme } from "next-themes";
 import StudentAnalytics from "@/components/student/dashboard/StudentAnalytics";
 import StudentChatWidget from "@/components/student/StudentChatWidget";
@@ -41,14 +43,12 @@ const navGroups = [
         label: "Certificates",
         href: "/student/certificates",
         icon: Award,
-        disabled: true,
       },
-      { label: "Resume", href: "/student/resume", icon: FileText, disabled: true },
+      { label: "Resume", href: "/student/resume", icon: FileText },
       {
         label: "Portfolio",
-        href: "/student/portfolio/professional-portfolio",
+        href: "/student/portfolio",
         icon: Briefcase,
-        disabled: true,
       },
     ],
   },
@@ -56,7 +56,7 @@ const navGroups = [
     id: "growth",
     label: "Growth",
     items: [
-      { label: "Analytics", href: "/student/analytics", icon: BarChart3, disabled: true },
+      { label: "Analytics", href: "/student/analytics", icon: BarChart3 },
       { label: "Opportunities", href: "/student/internships", icon: Briefcase, disabled: true },
       { label: "Settings", href: "/student/settings", icon: Settings, disabled: true },
     ],
@@ -83,7 +83,8 @@ function getInitials(name) {
 function NavItem({ item, pathname, onNavigate }) {
   const Icon = item.icon;
   const isActive =
-    pathname === item.href || pathname?.startsWith(`${item.href}/`);
+    pathname === item.href ||
+    (item.href !== "/student" && pathname?.startsWith(`${item.href}/`));
 
   if (item.disabled) {
     return (
@@ -425,7 +426,7 @@ export default function StudentDashboardUI({
                   title="Career Portfolio"
                   description="View and generate"
                   onClick={() =>
-                    router.push("/student/portfolio/professional-portfolio")
+                    router.push("/student/portfolio")
                   }
                 />
                 <ActionButton
@@ -475,6 +476,11 @@ export default function StudentDashboardUI({
                       Latest uploaded credentials and verification status.
                     </p>
                   </div>
+                  <Link href="/student/certificates">
+                    <Button variant="outline" size="sm">
+                      view more
+                    </Button>
+                  </Link>
                 </div>
                 {certificatesSlot}
               </section>
