@@ -91,9 +91,9 @@ const navGroups = [
       },
       {
         label: "HODs",
-        href: "/institution/departments/hods",
+        href: "/institution/hods",
         icon: Users,
-        disabled: true,
+        disabled: false,
       },
     ],
   },
